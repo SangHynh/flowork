@@ -10,18 +10,18 @@ app.get("/", (req, res) => {
 });
 
 app.listen(CONFIG.SERVER.PORT, () => {
-  console.log(`Express health check running on port ${CONFIG.SERVER.PORT}`);
+  console.log(`Kiểm tra sức khỏe hệ thống (Health check) đang chạy tại cổng ${CONFIG.SERVER.PORT}`);
 });
 
 // Initialize Telegram Bot
 const bot = new Bot(CONFIG.BOT.TOKEN);
 
 bot.command("start", (ctx) =>
-  ctx.reply("Flowork autonomous engine online. Send me a task to begin."),
+  ctx.reply("🤖 Flowork v1.1 đã sẵn sàng! Bạn hãy gửi yêu cầu để bắt đầu nhé."),
 );
 
 // Register Refactored Handlers
 registerHandlers(bot);
 
 bot.start();
-console.log("Bot running...");
+console.log("🚀 Bot đã online và đang lắng nghe...");

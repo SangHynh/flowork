@@ -12,7 +12,7 @@ export class Storage {
     try {
       await fs.mkdir(CONFIG.WORKFLOW.STORAGE_PATH, { recursive: true });
     } catch (err) {
-      console.error("Failed to initialize storage directory:", err);
+      console.error("Không thể khởi tạo thư mục lưu trữ (Storage):", err);
     }
   }
 
@@ -22,7 +22,7 @@ export class Storage {
       await fs.writeFile(filePath, JSON.stringify(state, null, 2), "utf-8");
       // console.log(`[Storage] Saved state for chat ${state.chatId}`);
     } catch (err) {
-      console.error(`[Storage] Failed to save state for chat ${state.chatId}:`, err);
+      console.error(`[Storage] Không thể lưu trạng thái cho chat ${state.chatId}:`, err);
     }
   }
 

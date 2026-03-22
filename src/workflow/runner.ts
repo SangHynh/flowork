@@ -8,7 +8,7 @@ export class Runner {
         child.kill();
         reject(
           new Error(
-            `CLI Execution timed out after ${CONFIG.WORKFLOW.TIMEOUTS.RUNNER_MS / 1000} seconds.`,
+            `Quá thời gian thực thi (Timeout) sau ${CONFIG.WORKFLOW.TIMEOUTS.RUNNER_MS / 1000} giây.`,
           ),
         );
       }, CONFIG.WORKFLOW.TIMEOUTS.RUNNER_MS);
@@ -19,7 +19,7 @@ export class Runner {
         args.push("-r", "latest");
       }
 
-      console.log(`[Runner] Executing: gemini ${args.join(" ")} (Prompt via STDIN)`);
+      console.log(`[Runner] Đang thực thi: gemini ${args.join(" ")} (Prompt qua STDIN)`);
 
       const child = spawn("gemini", args, {
         env: { ...process.env, NO_COLOR: "1" },
@@ -28,7 +28,7 @@ export class Runner {
 
       if (child.stdin) {
         // Prepend strict instruction to ensure all agents stay in the factory
-        const sandboxInstruction = `[SYSTEM INSTRUCTION: ALWAYS use the directory '${CONFIG.WORKFLOW.FACTORY_PATH}' for any file-related operations, saving, or code generation. DO NOT write to the root or 'src/'. Read input materials from '${CONFIG.WORKFLOW.MATERIAL_PATH}' if needed.]\n\n`;
+        const sandboxInstruction = `[HƯỚNG DẪN HỆ THỐNG: LUÔN sử dụng thư mục '${CONFIG.WORKFLOW.FACTORY_PATH}' cho mọi thao tác liên quan đến file, lưu trữ hoặc tạo code. KHÔNG ghi vào thư mục gốc hoặc 'src/'. Đọc tài liệu đầu vào từ '${CONFIG.WORKFLOW.MATERIAL_PATH}' nếu cần.]\n\n`;
         child.stdin.write(sandboxInstruction + prompt + "\n");
         child.stdin.end();
       }
@@ -60,7 +60,7 @@ export class Runner {
 
       child.on("error", (err) => {
         clearTimeout(timeout);
-        reject(new Error(`Failed to start child process: ${err.message}`));
+        reject(new Error(`Không thể khởi động tiến trình: ${err.message}`));
       });
     });
   }

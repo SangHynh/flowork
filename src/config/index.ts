@@ -29,6 +29,6 @@ export const CONFIG = {
 };
 
 if (!CONFIG.BOT.TOKEN) {
-  console.error("Missing TELEGRAM_BOT_TOKEN in environment variables.");
+  console.error("Thiếu TELEGRAM_BOT_TOKEN trong biến môi trường (.env).");
   process.exit(1);
 }

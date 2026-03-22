@@ -14,9 +14,9 @@ export const activeEngines = new Map<number, WorkflowEngine>();
  * Common update logic for bot handlers when a task changes.
  */
 async function onTaskUpdate(ctx: Context, task: Task) {
-  console.log(`[Bot] Task ${task.id} update: ${task.status}`);
+  console.log(`[Bot] Cập nhật Task ${task.id}: ${task.status}`);
   if (task.status === "running") {
-    await ctx.reply(`⏳ Running: ${task.description}... (Attempt ${task.retries + 1}/${3})`);
+    await ctx.reply(`⏳ Đang chạy: ${task.description}... (Thử lại: ${task.retries + 1}/${3})`);
   }
 }
 
@@ -24,14 +24,14 @@ async function onTaskUpdate(ctx: Context, task: Task) {
  * Common notify logic for bot handlers when a phase completes.
  */
 async function onPhaseComplete(ctx: Context, phaseId: number, tasks: Task[], totalPhases: number) {
-  let phaseReport = `✅ **Phase ${phaseId} Complete!**\n\n`;
+  let phaseReport = `✅ **Giai đoạn ${phaseId} Hoàn tất!**\n\n`;
   tasks.forEach((t) => {
-    phaseReport += `**${t.description}**:\n${t.output || "(No output)"}\n\n`;
+    phaseReport += `**${t.description}**:\n${t.output || "(Không có kết quả)"}\n\n`;
   });
 
   if (phaseId < totalPhases) {
     phaseReport +=
-      "⏸ **Workflow Paused.** Use /continue to proceed to next phase, or /abort to stop.";
+      "⏸ **Workflow Tạm dừng.** Sử dụng /continue để tiếp tục, hoặc /abort để dừng lại.";
   }
 
   await ctx.reply(phaseReport);
@@ -42,50 +42,30 @@ async function onPhaseComplete(ctx: Context, phaseId: number, tasks: Task[], tot
  */
 export function registerHandlers(bot: Bot) {
   bot.command("help", async (ctx) => {
-    const helpMsg = `🇻🇳 **TIẾNG VIỆT**
-🤖 **Flowork - Động cơ Tự hành v1.1**
+    const helpMsg = `🤖 **Flowork - Trợ lý Tự hành v1.1** 🇻🇳
 
-**Lệnh cốt lõi:**
-- \`/approve\` : Duyệt kế hoạch và bắt đầu chạy.
-- \`/continue\` : Tiếp tục Phase tiếp theo.
-- \`/abort\` : Dừng workflow và xóa trạng thái tạm.
-- \`/status\` : Kiểm tra tiến độ hiện tại.
+**Các lệnh Cốt lõi:**
+- \`/approve\` : Duyệt kế hoạch và bắt đầu chạy ngay.
+- \`/continue\` : Tiếp tục sau khi tạm dừng.
+- \`/abort\` : Dừng quy trình và xóa lịch sử hiện tại.
+- \`/status\` : Kiểm tra tiến độ đang thực hiện.
 
-**Công cụ Nhà máy:**
+**Công cụ Nhà máy (Factory Tools):**
 - \`/ship\` : Đóng gói FILE ra Desktop & gửi vào Telegram.
-- \`/shot\` : Chụp màn hình máy tính nhanh.
-- \`/clean\` : Dọn dẹp sạch sẽ Factory & Material.
+- \`/shot\` : Chụp ảnh màn hình Desktop nhanh.
+- \`/clean\` : Dọn dẹp sạch sẽ kho Factory & Material.
 
 **Quản trị:**
-- \`/killall\` : Dừng tất cả các task trên mọi Chat.
+- \`/killall\` : Dừng mọi quy trình đang chạy trên tất cả các Chat.
 
----
-
-🇺🇸 **ENGLISH**
-🤖 **Flowork - Autonomous Engine v1.1**
-
-**Core Commands:**
-- \`/approve\` : Approve plan and start execution.
-- \`/continue\` : Proceed to the next phase.
-- \`/abort\` : Stop workflow and clear state.
-- \`/status\` : Check current progress.
-
-**Factory Tools:**
-- \`/ship\` : Pack ALL to Desktop & send files here.
-- \`/shot\` : Take a quick desktop snapshot.
-- \`/clean\` : Wipe factory & material storage.
-
-**Admin:**
-- \`/killall\` : Termination for all active workflows.
-
-Simply send a text message to start! / Chỉ cần gửi tin nhắn để bắt đầu! 🧠🚀`;
+Chỉ cần gửi tin nhắn yêu cầu để bắt đầu! 🧠🚀`;
     await ctx.reply(helpMsg);
   });
 
   // --- Checkpoint: Restore sessions on startup ---
   Storage.init().then(async () => {
     const activeChats = await Storage.listActiveChats();
-    console.log(`[Bot] Restoring ${activeChats.length} active sessions...`);
+    console.log(`[Bot] Đang khôi phục ${activeChats.length} phiên làm việc cũ...`);
 
     for (const chatId of activeChats) {
       const state = await Storage.loadState(chatId);
@@ -93,7 +73,7 @@ Simply send a text message to start! / Chỉ cần gửi tin nhắn để bắt 
         state &&
         (state.status === "running" || state.status === "paused" || state.status === "planning")
       ) {
-        console.log(`[Bot] Restoring session for chat: ${chatId}`);
+        console.log(`[Bot] Đang khôi phục phiên cho Chat: ${chatId}`);
 
         const engine = new WorkflowEngine(
           state.dag,
@@ -102,12 +82,12 @@ Simply send a text message to start! / Chỉ cần gửi tin nhắn để bắt 
             if (task.status === "running") {
               await bot.api.sendMessage(
                 chatId,
-                `⏳ Running: ${task.description}... (Retries: ${task.retries})`,
+                `⏳ Đang chạy: ${task.description}... (Thử lại: ${task.retries})`,
               );
             }
           },
           async (phaseId: number) => {
-            const report = `✅ Phase ${phaseId} Complete!\n\nUse /continue or /abort.`;
+            const report = `✅ Giai đoạn ${phaseId} Hoàn tất!\n\nSử dụng /continue hoặc /abort nhé sếp.`;
             await bot.api.sendMessage(chatId, report);
           },
           state,
@@ -125,56 +105,55 @@ Simply send a text message to start! / Chỉ cần gửi tin nhắn để bắt 
 
   bot.command("approve", async (ctx) => {
     const engine = activeEngines.get(ctx.chat.id);
-    if (!engine) return ctx.reply("No active workflow to approve.");
+    if (!engine) return ctx.reply("💬 Hiện không có quy trình nào cần duyệt sếp ơi.");
 
     engine.resolveApproval();
-    await ctx.reply("🚀 Plan approved. Starting execution...");
+    await ctx.reply("🚀 Kế hoạch đã được duyệt. Bắt đầu thực thi...");
   });
 
   bot.command("continue", async (ctx) => {
     const engine = activeEngines.get(ctx.chat.id);
     if (!engine || engine.getState().status !== "paused") {
-      return ctx.reply("Workflow is not paused.");
+      return ctx.reply("💬 Quy trình không ở trạng thái tạm dừng sếp ạ.");
     }
 
     engine.resolveApproval();
-    await ctx.reply("⏭ Continuing to next phase...");
+    await ctx.reply("⏭ Đang tiếp tục Giai đoạn tiếp theo...");
   });
 
   bot.command("abort", async (ctx) => {
     const engine = activeEngines.get(ctx.chat.id);
-    if (!engine) return ctx.reply("No active workflow to abort.");
+    if (!engine) return ctx.reply("💬 Hiện không có quy trình nào đang chạy để hủy.");
 
-    engine.resolveAbort("Aborted by user via command.");
+    engine.resolveAbort("Hủy bởi người dùng.");
     activeEngines.delete(ctx.chat.id);
     await Storage.deleteState(ctx.chat.id);
-    await ctx.reply("🛑 Workflow aborted and history cleared.");
+    await ctx.reply("🛑 Đã hủy Workflow và xóa lịch sử tạm.");
   });
 
   bot.command("killall", async (ctx) => {
     let count = 0;
     for (const [id, engine] of activeEngines.entries()) {
-      engine.resolveAbort("System-wide kill triggered.");
+      engine.resolveAbort("Hệ thống yêu cầu dừng toàn bộ.");
       await Storage.deleteState(id);
       count++;
     }
     activeEngines.clear();
-    await ctx.reply(`💀 Total killed: ${count} active workflows.`);
+    await ctx.reply(`💀 Đã dừng cưỡng bức: ${count} quy trình đang chạy.`);
   });
 
   bot.command("status", async (ctx) => {
     const engine = activeEngines.get(ctx.chat.id);
-    if (!engine) return ctx.reply("No active workflow in this chat.");
+    if (!engine) return ctx.reply("💬 Hiện không có quy trình nào đang thực hiện cả.");
 
     const state = engine.getState();
     await ctx.reply(
-      `📊 **Current Status:**\n- State: ${state.status}\n- Phase: ${state.currentPhaseIndex + 1}/${state.dag.phases.length}`,
+      `📊 **Tiến độ Hiện tại:**\n- Trạng thái: ${state.status}\n- Giai đoạn: ${state.currentPhaseIndex + 1}/${state.dag.phases.length}`,
     );
   });
 
   bot.command("ship", async (ctx) => {
     const { InputFile } = await import("grammy");
-
     try {
       const projectFolder = await FactoryTools.shipAll();
       const folderName = path.basename(projectFolder);
@@ -196,9 +175,16 @@ Simply send a text message to start! / Chỉ cần gửi tin nhắn để bắt 
           });
         }
       }
+
+      // Automated visual confirmation with a slight delay to allow OS to refresh icons
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const photoPath = await FactoryTools.snapshot();
+      await ctx.replyWithPhoto(new InputFile(photoPath), {
+        caption: `🖼️ Snapshot Desktop (Folder: ${folderName})`,
+      });
     } catch (error: unknown) {
       const err = error as Error;
-      await ctx.reply(`❌ Ship failed: ${err.message}`);
+      await ctx.reply(`❌ Giao hàng hoặc chụp ảnh thất bại: ${err.message}`);
     }
   });
 
@@ -207,11 +193,11 @@ Simply send a text message to start! / Chỉ cần gửi tin nhắn để bắt 
       const photoPath = await FactoryTools.snapshot();
       const { InputFile } = await import("grammy");
       await ctx.replyWithPhoto(new InputFile(photoPath), {
-        caption: "📷 Desktop Snapshot",
+        caption: "📷 Ảnh chụp màn hình Desktop của sếp đây!",
       });
     } catch (error: unknown) {
       const err = error as Error;
-      await ctx.reply(`❌ Snapshot failed: ${err.message}`);
+      await ctx.reply(`❌ Chụp ảnh màn hình thất bại: ${err.message}`);
     }
   });
 
@@ -221,69 +207,93 @@ Simply send a text message to start! / Chỉ cần gửi tin nhắn để bắt 
       await ctx.reply(msg);
     } catch (error: unknown) {
       const err = error as Error;
-      await ctx.reply(`❌ Clean failed: ${err.message}`);
+      await ctx.reply(`❌ Dọn dẹp thất bại: ${err.message}`);
     }
   });
 
   bot.on("message:text", async (ctx) => {
-    const text = ctx.message.text;
-    if (text.startsWith("/")) return;
+    if (!ctx.chat) return; // Guard against undefined chat
+    const userInput = ctx.message.text;
+    if (userInput.startsWith("/")) return;
 
     if (activeEngines.has(ctx.chat.id)) {
-      activeEngines.get(ctx.chat.id)?.resolveAbort("New task started.");
-      activeEngines.delete(ctx.chat.id);
-      await Storage.deleteState(ctx.chat.id);
+      return ctx.reply("⚠️ Vui lòng đợi workflow hiện tại kết thúc hoặc dùng /abort để dừng.");
     }
 
-    const statusMsg = await ctx.reply("🧠 Planning workflow...");
+    // Show "typing..." and send an immediate placeholder message for instant feedback
+    await ctx.replyWithChatAction("typing");
+    const thinkingMsg = await ctx.reply("🧠 **Đang động não...** / *Thinking...*");
 
     try {
-      const dag = await Planner.generateDAG(text);
+      const { text, dag, executionTimeMs } = await Planner.generateDAG(userInput);
+      const timeLabel = `\n\n⏱️ ${(executionTimeMs / 1000).toFixed(1)} giây`;
 
-      let planSummary = "📝 **Proposed Plan:**\n\n";
-      dag.phases.forEach((phase) => {
-        planSummary += `**Phase ${phase.id}**:\n`;
-        phase.tasks.forEach((t) => {
-          planSummary += `- ${t.description} (Agent: ${t.agent})\n`;
-          t.retries = 0; // Initialize retries
-        });
-        planSummary += "\n";
-      });
-      planSummary += "Use /approve to start, or /abort to cancel.";
+      // Edit the placeholder message with the actual response text + time
+      await ctx.api.editMessageText(ctx.chat.id, thinkingMsg.message_id, text + timeLabel);
 
-      await ctx.api.editMessageText(ctx.chat.id, statusMsg.message_id, planSummary);
+      if (dag) {
+        // Prepare the engine for execution but DON'T execute until approved
+        const engine = new WorkflowEngine(
+          dag,
+          ctx.chat.id,
+          (task) => onTaskUpdate(ctx, task),
+          (phaseId, tasks) => onPhaseComplete(ctx, phaseId, tasks, dag.phases.length),
+        );
 
-      const engine = new WorkflowEngine(
-        dag,
-        ctx.chat.id,
-        (task) => onTaskUpdate(ctx, task),
-        (phaseId, tasks) => onPhaseComplete(ctx, phaseId, tasks, dag.phases.length),
-      );
+        activeEngines.set(ctx.chat.id, engine);
+        await Storage.saveState(engine.getState());
 
-      activeEngines.set(ctx.chat.id, engine);
-      await Storage.saveState(engine.getState());
-
-      engine
-        .execute()
-        .then(async () => {
-          const state = engine.getState();
-          if (state.status === "done") {
-            await ctx.reply("🏁 **Workflow Finished Successfully!**");
-            activeEngines.delete(ctx.chat.id);
-            await Storage.deleteState(ctx.chat.id);
-          }
-        })
-        .catch(async (err: unknown) => {
-          const error = err as Error;
-          console.error("Engine Error:", error);
-          await ctx.reply(`❌ **Workflow Failed!**\n\nError: ${error.message}`);
-          activeEngines.delete(ctx.chat.id);
-          await Storage.deleteState(ctx.chat.id);
-        });
+        await ctx.reply(
+          "📋 **Kế hoạch đã sẵn sàng!** Sếp xem qua thông tin ở trên rồi nhấn nút duyệt để bắt đầu nhé.",
+          {
+            reply_markup: {
+              inline_keyboard: [[{ text: "🚀 Duyệt và Bắt đầu", callback_data: "approve_plan" }]],
+            },
+          },
+        );
+      }
     } catch (error: unknown) {
       const err = error as Error;
       console.error("Planner Error:", err);
-      await ctx.reply(`❌ **Planning Failed!**\n\nError: ${err.message}`);
+      await ctx.reply(`❌ **Không thể xử lý yêu cầu!**\n\nLỗi: ${err.message}`);
+    }
+  });
+
+  bot.on("callback_query:data", async (ctx) => {
+    if (!ctx.chat) return;
+    const chatId = ctx.chat.id;
+
+    if (ctx.callbackQuery.data === "approve_plan") {
+      const engine = activeEngines.get(chatId);
+      if (!engine) return ctx.answerCallbackQuery("Không tìm thấy kế mẫu.");
+
+      if (engine.getState().status === "planning") {
+        engine.resolveApproval();
+        await ctx.answerCallbackQuery("Bắt đầu workflow!");
+        await ctx.editMessageText("🚀 Đã duyệt Kế hoạch! Đang thực thi...");
+
+        engine
+          .execute()
+          .then(async () => {
+            const state = engine.getState();
+            if (state.status === "done") {
+              await ctx.reply(
+                "🏁 **Công việc đã hoàn thành mỹ mãn!** Sếp dùng /ship để nhận hàng nhé.",
+              );
+              activeEngines.delete(chatId);
+              await Storage.deleteState(chatId);
+            }
+          })
+          .catch(async (err: unknown) => {
+            const error = err as Error;
+            console.error("Execution Error:", error);
+            await ctx.reply(`❌ **Workflow Thất bại!**\n\nLỗi: ${error.message}`);
+            activeEngines.delete(chatId);
+            await Storage.deleteState(chatId);
+          });
+      } else {
+        await ctx.answerCallbackQuery("Workflow đã được bắt đầu trước đó.");
+      }
     }
   });
 }

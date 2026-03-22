@@ -3,8 +3,13 @@ import { DAG } from "../types/index.js";
 import { CONFIG } from "../config/index.js";
 
 const PLANNER_SYSTEM_PROMPT = `
-You are a Workflow Planner. Your job is to decompose a user request into a sequence of tasks (DAG).
-Output ONLY a JSON object following this structure:
+Bạn là Kiến trúc sư trưởng của Flowork. Nhiệm vụ của bạn là hỗ trợ người dùng bằng cách giải đáp thắc mắc, tư vấn hoặc lập kế hoạch thực thi công việc.
+
+PHƯƠNG CHỨC HOẠT ĐỘNG:
+1. TRÒ CHUYỆN: Nếu người dùng hỏi thăm hoặc thắc mắc, hãy trả lời tự nhiên bằng TIẾNG VIỆT (Markdown). Hãy thân thiện và chuyên nghiệp.
+2. THỰC THI: Nếu người dùng đưa ra một nhiệm vụ rõ ràng, hãy GIẢI THÍCH cách bạn sẽ làm trước, sau đó đính kèm một khối JSON đại diện cho Kế hoạch (DAG) bên dưới.
+
+CẤU TRÚC KẾ HOẠCH (nếu cần thực thi):
 {
   "phases": [
     {
@@ -12,9 +17,9 @@ Output ONLY a JSON object following this structure:
       "tasks": [
         {
           "id": "task-1",
-          "agent": "gemini-3-flash-preview",
-          "description": "Short description of the task",
-          "prompt": "The precise prompt to send to the agent for this specific task",
+          "agent": "${CONFIG.WORKFLOW.MODELS.DEFAULT}",
+          "description": "Mô tả ngắn bằng Tiếng Việt",
+          "prompt": "Chi tiết yêu cầu cho Agent (có thể dùng Tiếng Anh để agent hiểu tốt hơn)",
           "depends_on": [],
           "critical": true
         }
@@ -23,53 +28,74 @@ Output ONLY a JSON object following this structure:
   ]
 }
 
-Rules:
-1. Divide work into Phases. Tasks in the same Phase run in parallel. 
-2. Tasks in Phase N+1 can depend on tasks in Phase N.
-3. Use '${CONFIG.WORKFLOW.MODELS.DEFAULT}' for most tasks unless it requires heavy reasoning (use '${CONFIG.WORKFLOW.MODELS.PLANNER}').
-4. ALWAYS use the directory '${CONFIG.WORKFLOW.FACTORY_PATH}' for any files you create, save, or scripts you generate. 
-5. You can read input materials from '${CONFIG.WORKFLOW.MATERIAL_PATH}' if the user provides shared assets.
-6. SHIP & SNAPSHOT: Inform the user that they can use the '/ship' command to move products to their Desktop/Telegram, and '/shot' to take a visual snapshot of the desktop.
-7. Output NOTHING but the JSON. No markdown fences.
+QUY TẮC:
+- Luôn sử dụng thư mục '${CONFIG.WORKFLOW.FACTORY_PATH}' cho mọi sản phẩm tạo ra.
+- Sử dụng '${CONFIG.WORKFLOW.MATERIAL_PATH}' cho các tài liệu đầu vào.
+- Sau khi xong, hãy nhắc người dùng dùng lệnh '/ship' để nhận hàng và '/shot' để xem ảnh màn hình.
+- CHỈ xuất JSON khi có yêu cầu làm việc thực sự. Viết phần giải thích kế hoạch bằng TIẾNG VIỆT trước khi có JSON.
+- TRUNG THỰC: Nếu không thể thực hiện yêu cầu, hãy báo rõ lý do cụ thể. KHÔNG tự ý thay đổi hoặc đơn giản hóa yêu cầu mà không hỏi người dùng.
+- BÁO LỖI: Nếu gặp lỗi hoặc không chắc chắn, hãy mô tả vấn đề rõ ràng và đề xuất người dùng liên hệ hỗ trợ thay vì tự đoán.
 `;
 
+export interface PlannerResult {
+  text: string;
+  dag?: DAG;
+  executionTimeMs: number;
+}
+
 export class Planner {
-  static async generateDAG(userInput: string): Promise<DAG> {
+  static async generateDAG(userInput: string): Promise<PlannerResult> {
     const fullPrompt = `${PLANNER_SYSTEM_PROMPT}\n\nUser Request: "${userInput}"`;
 
-    // We use gemini-3.1-pro-preview for planning as it's the "Brain"
+    const start = Date.now();
     const rawOutput = await Runner.run(fullPrompt, {
-      // We don't want to resume context for planning typically
-      // as it might pollute the DAG structure with previous task info
       resume: false,
     });
+    const duration = Date.now() - start;
 
-    return this.parseDAG(rawOutput);
+    const result = this.parseResponse(rawOutput);
+    return { ...result, executionTimeMs: duration };
   }
 
-  private static parseDAG(raw: string): DAG {
+  private static parseResponse(raw: string): Omit<PlannerResult, "executionTimeMs"> {
+    const jsonStr = this.extractJSON(raw);
+    if (!jsonStr) {
+      return { text: raw.trim() };
+    }
+
     try {
-      const jsonStr = this.extractJSON(raw);
-      return JSON.parse(jsonStr);
+      const dag = JSON.parse(jsonStr);
+      // Remove the JSON string from the text to get only the explanation
+      const explanation = raw
+        .replace(jsonStr, "")
+        .replace(/```json|```/g, "")
+        .trim();
+      return { text: explanation || "Đang lập kế hoạch thực hiện:", dag };
     } catch (error: unknown) {
-      console.error("Failed to parse DAG JSON:", raw);
-      const err = error as Error;
-      const parseErr = new Error(`Planner failed to generate a valid DAG: ${err.message}`);
-      parseErr.cause = err;
-      throw parseErr;
+      console.warn("Tìm thấy cấu trúc giống JSON nhưng không thể phân tích DAG:", error);
+      return { text: raw.trim() };
     }
   }
 
-  private static extractJSON(raw: string): string {
-    // Try to find markdown code block first
-    const match = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  private static extractJSON(raw: string): string | null {
+    // 1. Try to find a JSON block with fences
+    const match = raw.match(/```json\s*(\{[\s\S]*?\})\s*```/i);
     if (match) return match[1].trim();
 
-    // Fallback to finding the first { and last }
+    // 2. Try generic code block fences
+    const genericMatch = raw.match(/```\s*(\{[\s\S]*?\})\s*```/);
+    if (genericMatch) return genericMatch[1].trim();
+
+    // 3. Fallback: find the first { and the balanced last }
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
-    if (start !== -1 && end !== -1) return raw.slice(start, end + 1);
+    if (start !== -1 && end !== -1 && end > start) {
+      const candidate = raw.slice(start, end + 1);
+      if (candidate.includes('"phases"')) {
+        return candidate.trim();
+      }
+    }
 
-    return raw.trim();
+    return null;
   }
 }

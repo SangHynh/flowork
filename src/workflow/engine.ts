@@ -57,7 +57,7 @@ export class WorkflowEngine {
 
   async execute() {
     console.log(
-      `[Engine] Workflow execution for Chat: ${this.state.chatId}. Current State: ${this.state.status}`,
+      `[Engine] Đang thực thi workflow cho Chat: ${this.state.chatId}. Trạng thái hiện tại: ${this.state.status}`,
     );
 
     // Persist status change
