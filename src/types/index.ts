@@ -1,39 +1,22 @@
-export interface Article {
-  title: string;
-  link: string;
-  description: string;
+export interface Session {
+  active: boolean;
+  sessionId: string;
+  startedAt: string;
 }
 
-export interface Headline {
-  title: string;
-  link: string;
-}
-
-export interface Task {
+export interface ChecklistItem {
   id: string;
-  agent: "gemini-3-flash-preview" | "gemini-3.1-pro-preview";
-  prompt: string;
-  description: string;
-  depends_on: string[];
-  status: "pending" | "running" | "done" | "failed";
-  output?: string;
-  retries: number; // For Milestone 4.1 Auto-retry
-  error?: string;
-  critical?: boolean;
-}
-
-export interface Phase {
-  id: number;
-  tasks: Task[];
-}
-
-export interface DAG {
-  phases: Phase[];
-}
-
-export interface WorkflowState {
-  dag: DAG;
-  currentPhaseIndex: number;
-  status: "planning" | "running" | "paused" | "done" | "failed";
-  chatId: number;
+  task: string;
+  status:
+    | 'pending'
+    | 'done'
+    | 'failed'
+    | 'waiting_confirm'
+    | 'approved'
+    | 'rejected';
+  type: 'progress' | 'error' | 'confirm' | 'file';
+  sent: boolean;
+  timestamp: string;
+  reason?: string;
+  file?: string;
 }

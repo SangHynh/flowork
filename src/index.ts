@@ -1,27 +1,20 @@
-import { Bot } from "grammy";
-import express from "express";
-import { registerHandlers } from "./bot/handlers.js";
-import { CONFIG } from "./config/index.js";
+import * as dotenv from 'dotenv';
+import { Bot } from 'grammy';
+import { setupHandlers } from './bot/handlers';
 
-// Initialize Express for Health Checks
-const app = express();
-app.get("/", (req, res) => {
-  res.status(200).send("OK");
-});
+dotenv.config();
 
-app.listen(CONFIG.SERVER.PORT, () => {
-  console.log(`Kiểm tra sức khỏe hệ thống (Health check) đang chạy tại cổng ${CONFIG.SERVER.PORT}`);
-});
+const token = process.env.TELEGRAM_BOT_TOKEN;
 
-// Initialize Telegram Bot
-const bot = new Bot(CONFIG.BOT.TOKEN);
+if (!token) {
+  console.error('TELEGRAM_BOT_TOKEN is missing in .env');
+  process.exit(1);
+}
 
-bot.command("start", (ctx) =>
-  ctx.reply("🤖 Flowork v1.1 đã sẵn sàng! Bạn hãy gửi yêu cầu để bắt đầu nhé."),
-);
+const bot = new Bot(token);
 
-// Register Refactored Handlers
-registerHandlers(bot);
+setupHandlers(bot);
+
+console.log('Bot is starting...');
 
 bot.start();
-console.log("🚀 Bot đã online và đang lắng nghe...");

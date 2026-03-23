@@ -1,17 +1,34 @@
-import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-config-prettier";
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettierPlugin from 'eslint-plugin-prettier';
+import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
-  prettier,
   {
-    ignores: ["node_modules/", "dist/", ".agent/"],
-  },
-  {
-    rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
+    plugins: {
+      prettier: prettierPlugin,
     },
+    rules: {
+      'prettier/prettier': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  prettierConfig,
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'state/**',
+      '.agent/**',
+      'package.json',
+      'package-lock.json',
+      'tsconfig.json',
+    ],
   },
 );
