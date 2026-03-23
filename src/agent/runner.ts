@@ -11,7 +11,7 @@ export class AgentRunner {
   private sessionPath: string;
 
   constructor() {
-    this.sessionPath = process.env.SESSION_PATH || 'state/session.json';
+    this.sessionPath = 'state/session.json';
   }
 
   async startSession(workdir: string): Promise<void> {
@@ -23,22 +23,20 @@ export class AgentRunner {
     }
     fs.writeFileSync(this.sessionPath, JSON.stringify(session, null, 2));
 
-    const systemPrompt = 'Hãy sẵn sàng để hỗ trợ tôi. Bắt đầu ngay.';
-    const execArgs = [
-      'exec',
-      systemPrompt,
-      '--full-auto',
-      '--skip-git-repo-check',
-    ];
+    let systemPrompt = 'Hãy sẵn sàng để hỗ trợ tôi. Bắt đầu ngay.';
 
     logger.agent(`Fire-and-forget starting at ${workdir}...`);
     return new Promise((resolve, reject) => {
-      const child = spawn('codex', execArgs, {
-        cwd: workdir,
-        shell: false,
-        windowsHide: true,
-        stdio: 'ignore',
-      });
+      const child = spawn(
+        'codex',
+        ['exec', `"${systemPrompt}"`, '--full-auto', '--skip-git-repo-check'],
+        {
+          cwd: workdir,
+          shell: true,
+          windowsHide: true,
+          stdio: 'ignore',
+        },
+      );
 
       child.on('error', (err) => {
         logger.error(`Unable to start codex exec: ${err.message}`);
@@ -62,7 +60,7 @@ export class AgentRunner {
         'exec',
         'resume',
         '--last',
-        prompt,
+        `"${prompt}"`,
         '--full-auto',
         '--skip-git-repo-check',
       ],
@@ -74,6 +72,7 @@ export class AgentRunner {
     return new Promise((resolve, reject) => {
       logger.agent(`Running: codex ${args.join(' ')} (at ${cwd || './'})`);
       const process = spawn('codex', args, {
+        shell: true,
         windowsHide: true,
         cwd: cwd,
       });
@@ -101,6 +100,7 @@ export class AgentRunner {
   static checkCodexAvailability(): Promise<void> {
     return new Promise((resolve, reject) => {
       const process = spawn('codex', ['--version'], {
+        shell: true,
         windowsHide: true,
       });
       let output = '';
