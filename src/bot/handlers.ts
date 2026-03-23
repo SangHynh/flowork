@@ -1,4 +1,6 @@
-import { Bot } from 'grammy';
+import { Bot, InlineKeyboard } from 'grammy';
+import * as fs from 'fs';
+import * as path from 'path';
 import { AgentRunner } from '../agent/runner';
 import { logger } from '../utils/logger';
 
@@ -8,15 +10,47 @@ export function setupHandlers(bot: Bot) {
   // /start command
   bot.command('start', async (ctx) => {
     logger.user('/start', ctx.from?.id);
-    await ctx.reply('🟢 Flowork online. Đang khởi tạo phiên làm việc mới...');
+    const projectsDir = process.env.PROJECTS_DIR || 'e:\\fullstack';
+    
+    if (!fs.existsSync(projectsDir)) {
+      return ctx.reply(`❌ Thư mục dự án không tồn tại: ${projectsDir}`);
+    }
+
+    const folders = fs.readdirSync(projectsDir).filter((name) => {
+      return fs.statSync(path.join(projectsDir, name)).isDirectory() && !name.startsWith('.');
+    });
+
+    if (folders.length === 0) {
+      return ctx.reply('ℹ️ Không tìm thấy dự án nào trong thư mục này.');
+    }
+
+    const keyboard = new InlineKeyboard();
+    folders.forEach((folder, index) => {
+      keyboard.text(folder, `ws:${folder}`);
+      if ((index + 1) % 2 === 0) keyboard.row();
+    });
+
+    await ctx.reply('🚀 *Flowork Online*\nHãy chọn workspace bạn muốn làm việc:', {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard,
+    });
+  });
+
+  // Workspace selection callback
+  bot.callbackQuery(/^ws:(.+)$/, async (ctx) => {
+    const folder = ctx.match[1];
+    const projectsDir = process.env.PROJECTS_DIR || 'e:\\fullstack';
+    const workdir = path.join(projectsDir, folder);
+
+    logger.user(`select workspace: ${folder}`, ctx.from?.id);
+    await ctx.answerCallbackQuery();
+    await ctx.editMessageText(`🟢 Đang khởi tạo phiên làm việc tại: \`${folder}\``, {
+      parse_mode: 'Markdown',
+    });
+
     try {
-      const start = Date.now();
-      const output = await runner.startSession(
-        'Bạn là Flowork Agent. Hãy giới thiệu bản thân ngắn gọn.',
-      );
-      const duration = ((Date.now() - start) / 1000).toFixed(1);
-      await ctx.reply('✅ Phiên mới đã sẵn sàng. Gõ lệnh bất kỳ để bắt đầu.');
-      if (output) await ctx.reply(`${output}\n\n⏱️ ${duration}s`);
+      runner.startSession(workdir);
+      await ctx.reply(`✅ Phiên làm việc mới đã sẵn sàng tại: \`${folder}\`\nHãy gõ lệnh bất kỳ để bắt đầu.`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       await ctx.reply(`❌ Lỗi khởi tạo: ${message}`);

@@ -11,30 +11,45 @@ export class AgentRunner {
     this.sessionPath = process.env.SESSION_PATH || 'state/session.json';
   }
 
-  async startSession(prompt: string): Promise<string> {
+  async startSession(workdir: string): Promise<void> {
     const sessionId = crypto.randomUUID();
     const session: Session = {
       active: true,
       sessionId,
+      workdir,
       startedAt: new Date().toISOString(),
     };
 
-    if (!fs.existsSync(path.dirname(this.sessionPath))) {
-      fs.mkdirSync(path.dirname(this.sessionPath), { recursive: true });
+    const stateDir = path.dirname(this.sessionPath);
+    if (!fs.existsSync(stateDir)) {
+      fs.mkdirSync(stateDir, { recursive: true });
     }
     fs.writeFileSync(this.sessionPath, JSON.stringify(session, null, 2));
 
-    return this.runCodex(`exec "${prompt}" --full-auto`);
+    let systemPrompt = 'Hãy sẵn sàng để hỗ trợ tôi. Bắt đầu ngay.';
+    if (fs.existsSync('SYSTEM_PROMPT.md')) {
+      systemPrompt = fs.readFileSync('SYSTEM_PROMPT.md', 'utf8');
+    }
+    
+    logger.agent(`Fire-and-forget starting at ${workdir}...`);
+    spawn('codex', ['exec', `"${systemPrompt}"`, '--full-auto', '-C', workdir], {
+      shell: true,
+      windowsHide: true,
+      stdio: 'ignore'
+    }).unref();
   }
 
   async resumeSession(prompt: string): Promise<string> {
-    return this.runCodex(`exec resume --last "${prompt}" --full-auto`);
+    const session = this.getActiveSession();
+    if (!session) throw new Error('No active session.');
+
+    return this.runCodex(['exec', 'resume', '--last', `"${prompt}"`, '--full-auto', '-C', session.workdir]);
   }
 
-  private runCodex(args: string): Promise<string> {
+  private runCodex(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      logger.agent(`Running: codex ${args}`);
-      const process = spawn('codex', args.split(' '), { shell: true });
+      logger.agent(`Running: codex ${args.join(' ')}`);
+      const process = spawn('codex', args, { shell: true, windowsHide: true });
       let output = '';
       let error = '';
 
@@ -48,7 +63,7 @@ export class AgentRunner {
 
       process.on('close', (code) => {
         if (code === 0) {
-          resolve(output);
+          resolve(output.trim());
         } else {
           reject(new Error(error || `Codex exited with code ${code}`));
         }
@@ -59,9 +74,12 @@ export class AgentRunner {
   getActiveSession(): Session | null {
     if (fs.existsSync(this.sessionPath)) {
       try {
-        const session = JSON.parse(fs.readFileSync(this.sessionPath, 'utf8'));
+        const content = fs.readFileSync(this.sessionPath, 'utf8');
+        if (!content.trim()) return null;
+        const session = JSON.parse(content);
         return session.active ? session : null;
-      } catch {
+      } catch (err) {
+        logger.error(`Error reading session: ${err}`);
         return null;
       }
     }
@@ -70,9 +88,15 @@ export class AgentRunner {
 
   stopSession() {
     if (fs.existsSync(this.sessionPath)) {
-      const session = JSON.parse(fs.readFileSync(this.sessionPath, 'utf8'));
-      session.active = false;
-      fs.writeFileSync(this.sessionPath, JSON.stringify(session, null, 2));
+      try {
+        const content = fs.readFileSync(this.sessionPath, 'utf8');
+        if (!content.trim()) return;
+        const session = JSON.parse(content);
+        session.active = false;
+        fs.writeFileSync(this.sessionPath, JSON.stringify(session, null, 2));
+      } catch (err) {
+        logger.error(`Error stopping session: ${err}`);
+      }
     }
   }
 }

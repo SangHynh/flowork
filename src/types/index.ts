@@ -1,6 +1,7 @@
 export interface Session {
   active: boolean;
   sessionId: string;
+  workdir: string;
   startedAt: string;
 }
 
