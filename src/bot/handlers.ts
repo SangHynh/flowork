@@ -56,14 +56,25 @@ function renderExplorer(currentRelPath: string) {
   };
 }
 
+const helpText = `
+🤖 *Flowork Bot - Phím tắt lệnh*
+----------------------
+📂 /workspaces : Duyệt và chọn nơi làm việc
+📋 /list : Xem các file trong project
+ℹ️ /status : Xem trạng thái phiên hiện tại
+🛑 /stop : Kết thúc phiên làm việc
+❓ /help : Hiện danh sách lệnh này
+
+💬 *Gõ tin nhắn:* Trò chuyện hoặc yêu cầu AI làm việc ngay tại workspace đã chọn.
+`;
+
 export function setupHandlers(bot: Bot) {
   // /start command
   bot.command('start', async (ctx) => {
     logger.user('/start', ctx.from?.id);
-    await ctx.reply(
-      '🚀 *Chào mừng bạn đến với Flowork!*\nHãy dùng /workspaces để chọn nơi làm việc, /help để xem danh sách lệnh.',
-      { parse_mode: 'Markdown' },
-    );
+    await ctx.reply(`🚀 *Chào mừng bạn đến với Flowork!*\n${helpText}`, {
+      parse_mode: 'Markdown',
+    });
   });
 
   // /workspaces command
@@ -190,17 +201,6 @@ export function setupHandlers(bot: Bot) {
   // /help command
   bot.command('help', async (ctx) => {
     logger.user('/help', ctx.from?.id);
-    const helpText = `
-🤖 *Flowork Bot - Phím tắt lệnh*
-----------------------
-📂 /workspaces : Duyệt và chọn nơi làm việc
-📋 /list : Xem các file trong project
-ℹ️ /status : Xem trạng thái phiên hiện tại
-🛑 /stop : Kết thúc phiên làm việc
-❓ /help : Hiện danh sách lệnh này
-
-💬 *Gõ tin nhắn:* Trò chuyện hoặc yêu cầu AI làm việc ngay tại workspace đã chọn.
-    `;
     await ctx.reply(helpText, { parse_mode: 'Markdown' });
   });
 
