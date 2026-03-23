@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import { Bot } from 'grammy';
 import { setupHandlers } from './bot/handlers';
+import { logger } from './utils/logger';
 
 dotenv.config();
 
@@ -15,6 +16,6 @@ const bot = new Bot(token);
 
 setupHandlers(bot);
 
-console.log('Bot is starting...');
+logger.system('Bot is starting...');
 
 bot.start();

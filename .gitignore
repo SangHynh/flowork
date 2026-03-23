@@ -7,3 +7,4 @@ state/*.json
 .agent/factory/*
 !.agent/factory/.gitkeep
 .agent
+state

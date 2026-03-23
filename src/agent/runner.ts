@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Session } from '../types';
+import { logger } from '../utils/logger';
 
 export class AgentRunner {
   private sessionPath: string;
@@ -32,7 +33,7 @@ export class AgentRunner {
 
   private runCodex(args: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      console.log(`Running: codex ${args}`);
+      logger.agent(`Running: codex ${args}`);
       const process = spawn('codex', args.split(' '), { shell: true });
       let output = '';
       let error = '';
