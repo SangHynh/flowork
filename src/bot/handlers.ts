@@ -160,7 +160,7 @@ export function setupHandlers(bot: Bot) {
     );
 
     try {
-      runner.startSession(workdir);
+      await runner.startSession(workdir);
       await ctx.reply(
         `✅ Workspace hiện tại: \`${relPath || 'Gốc'}\`\nPhiên mới đã được mở. Hãy gõ lệnh bất kỳ để bắt đầu.`,
       );

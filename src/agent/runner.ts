@@ -1,8 +1,11 @@
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Session } from '../types';
 import { logger } from '../utils/logger';
+
+interface Session {
+  workdir: string;
+}
 
 export class AgentRunner {
   private sessionPath: string;
@@ -20,22 +23,34 @@ export class AgentRunner {
     }
     fs.writeFileSync(this.sessionPath, JSON.stringify(session, null, 2));
 
-    let systemPrompt = 'Hãy sẵn sàng để hỗ trợ tôi. Bắt đầu ngay.';
-    if (fs.existsSync('SYSTEM_PROMPT.md')) {
-      systemPrompt = fs.readFileSync('SYSTEM_PROMPT.md', 'utf8');
-    }
+    const systemPrompt = 'Hãy sẵn sàng để hỗ trợ tôi. Bắt đầu ngay.';
+    const execArgs = [
+      'exec',
+      systemPrompt,
+      '--full-auto',
+      '--skip-git-repo-check',
+    ];
 
     logger.agent(`Fire-and-forget starting at ${workdir}...`);
-    spawn(
-      'codex',
-      ['exec', `"${systemPrompt}"`, '--full-auto', '--skip-git-repo-check'],
-      {
+    return new Promise((resolve, reject) => {
+      const child = spawn('codex', execArgs, {
         cwd: workdir,
-        shell: true,
+        shell: false,
         windowsHide: true,
         stdio: 'ignore',
-      },
-    ).unref();
+      });
+
+      child.on('error', (err) => {
+        logger.error(`Unable to start codex exec: ${err.message}`);
+        reject(err);
+      });
+
+      child.on('spawn', () => {
+        resolve();
+      });
+
+      child.unref();
+    });
   }
 
   async resumeSession(prompt: string): Promise<string> {
@@ -47,7 +62,7 @@ export class AgentRunner {
         'exec',
         'resume',
         '--last',
-        `"${prompt}"`,
+        prompt,
         '--full-auto',
         '--skip-git-repo-check',
       ],
@@ -59,7 +74,6 @@ export class AgentRunner {
     return new Promise((resolve, reject) => {
       logger.agent(`Running: codex ${args.join(' ')} (at ${cwd || './'})`);
       const process = spawn('codex', args, {
-        shell: true,
         windowsHide: true,
         cwd: cwd,
       });
@@ -87,7 +101,6 @@ export class AgentRunner {
   static checkCodexAvailability(): Promise<void> {
     return new Promise((resolve, reject) => {
       const process = spawn('codex', ['--version'], {
-        shell: true,
         windowsHide: true,
       });
       let output = '';
