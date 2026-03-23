@@ -8,6 +8,30 @@ const runner = new AgentRunner();
 
 // State to track users creating a new folder
 const pendingCreations = new Map<number, string>(); // userId -> parentPath
+const unauthorizedMessages = [
+  'Sai cửa rồi bạn ơi, đây không phải bot của bạn.',
+  'Lượn nhẹ nha, khu này có chủ rồi.',
+  'Ấn linh tinh gì thế, bot này không tiếp khách lạ.',
+  'Bạn không có vé vào cửa đâu, quay xe giúp mình.',
+  'Đừng nghịch nữa, bot này đang bận phục vụ chủ nhân.',
+];
+
+function parseAllowedUserIds() {
+  return new Set(
+    (process.env.ALLOWED_USER_ID || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value > 0),
+  );
+}
+
+function getUnauthorizedMessage() {
+  return unauthorizedMessages[
+    Math.floor(Math.random() * unauthorizedMessages.length)
+  ];
+}
 
 function renderExplorer(currentRelPath: string) {
   const projectsDir = process.env.PROJECTS_DIR || 'e:\\fullstack';
@@ -61,14 +85,39 @@ const helpText = `
 ----------------------
 📂 /workspaces : Duyệt và chọn nơi làm việc
 📋 /list : Xem các file trong project
-ℹ️ /status : Xem trạng thái phiên hiện tại
-🛑 /stop : Kết thúc phiên làm việc
+ℹ️ /status : Xem workspace hiện tại
+🛑 /stop : Xóa state phiên hiện tại
 ❓ /help : Hiện danh sách lệnh này
 
 💬 *Gõ tin nhắn:* Trò chuyện hoặc yêu cầu AI làm việc ngay tại workspace đã chọn.
 `;
 
 export function setupHandlers(bot: Bot) {
+  const allowedUserIds = parseAllowedUserIds();
+
+  bot.use(async (ctx, next) => {
+    const userId = ctx.from?.id;
+    if (!userId || !allowedUserIds.has(userId)) {
+      const message = getUnauthorizedMessage();
+      logger.warn(
+        `Blocked unauthorized access from user ${userId || 'unknown'}`,
+      );
+
+      if (ctx.callbackQuery) {
+        await ctx.answerCallbackQuery({ text: message, show_alert: true });
+        return;
+      }
+
+      if (ctx.message) {
+        await ctx.reply(message);
+      }
+
+      return;
+    }
+
+    await next();
+  });
+
   // /start command
   bot.command('start', async (ctx) => {
     logger.user('/start', ctx.from?.id);
@@ -104,7 +153,7 @@ export function setupHandlers(bot: Bot) {
     logger.user(`select workspace: ${relPath}`, ctx.from?.id);
     await ctx.answerCallbackQuery();
     await ctx.editMessageText(
-      `🟢 Đang khởi tạo phiên làm việc tại: \`${relPath || '/'}\``,
+      `🟢 Đang mở phiên mới tại workspace: \`${relPath || '/'}\``,
       {
         parse_mode: 'Markdown',
       },
@@ -113,7 +162,7 @@ export function setupHandlers(bot: Bot) {
     try {
       runner.startSession(workdir);
       await ctx.reply(
-        `✅ Phiên làm việc mới đã sẵn sàng tại: \`${relPath || 'Gốc'}\`\nHãy gõ lệnh bất kỳ để bắt đầu.`,
+        `✅ Workspace hiện tại: \`${relPath || 'Gốc'}\`\nPhiên mới đã được mở. Hãy gõ lệnh bất kỳ để bắt đầu.`,
       );
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -142,7 +191,9 @@ export function setupHandlers(bot: Bot) {
   bot.command('stop', async (ctx) => {
     logger.user('/stop', ctx.from?.id);
     runner.stopSession();
-    await ctx.reply('🛑 Phiên kết thúc. Gõ /start để bắt đầu lại.');
+    await ctx.reply(
+      '🛑 Đã xóa state phiên hiện tại. Gõ /workspaces để chọn lại.',
+    );
   });
 
   // /status command
@@ -151,11 +202,11 @@ export function setupHandlers(bot: Bot) {
     const session = runner.getActiveSession();
     if (session) {
       await ctx.reply(
-        `ℹ️ *Trạng thái phiên*\n\n📁 Workspace: \`${session.workdir}\`\n📅 Bắt đầu: ${session.startedAt}`,
+        `ℹ️ *Trạng thái hiện tại*\n\n📁 Workspace: \`${session.workdir}\``,
         { parse_mode: 'Markdown' },
       );
     } else {
-      await ctx.reply('ℹ️ Hiện không có session nào đang chạy.');
+      await ctx.reply('ℹ️ Hiện chưa có workspace nào được chọn.');
     }
   });
 
@@ -202,12 +253,6 @@ export function setupHandlers(bot: Bot) {
   bot.command('help', async (ctx) => {
     logger.user('/help', ctx.from?.id);
     await ctx.reply(helpText, { parse_mode: 'Markdown' });
-  });
-
-  // /clear command
-  bot.command('clear', async (ctx) => {
-    logger.user('/clear', ctx.from?.id);
-    await ctx.reply('🧹 Workspace đã được reset (giả định).');
   });
 
   // Handle all messages
@@ -257,7 +302,7 @@ export function setupHandlers(bot: Bot) {
     const session = runner.getActiveSession();
     if (!session) {
       return ctx.reply(
-        '⚠️ Hiện chưa có session nào. Gõ /workspaces để chọn một dự án.',
+        '⚠️ Hiện chưa có workspace nào được chọn. Gõ /workspaces để chọn một dự án.',
       );
     }
 
