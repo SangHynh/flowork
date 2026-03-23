@@ -1,95 +1,49 @@
-# 🚀 Flowork — AI Workspace Automation Agent
+# 🚀 Flowork — AI Workspace Bot `v1.0.0`
 
-**Flowork** là một Telegram Bot mạnh mẽ giúp bạn quản lý các dự án lập trình và tự động hóa công việc thông qua trí tuệ nhân tạo (Codex). Với Flowork, bạn có thể duyệt thư mục, tạo dự án mới và ra lệnh cho AI thực thi ngay trên chính ổ đĩa của mình chỉ qua vài dòng chat.
+**Flowork** là giải pháp "Biến Telegram thành trung tâm điều khiển dự án". Đây là công cụ lý tưởng giúp bạn duy trì tiến độ công việc ngay cả khi đã rời bàn máy tính: dù bạn đang bận **nấu cơm, hay đang ẻ trong WC 🚽, hoặc đang bận bịu ở bất cứ đâu** mà không tiện ngồi trước màn hình.
 
----
-
-## ✨ Tính năng nổi bật (Phase 1++)
-
-- 📁 **Workspace Explorer:** Duyệt cây thư mục trực quan ngay trên Telegram (đi sâu, quay lại, chọn).
-- 🆕 **Tạo dự án nhanh:** Tạo thư mục mới ngay lập tức qua tin nhắn `Force Reply`.
-- 🤖 **AI Integration:** Trò chuyện và ra lệnh cho AI xử lý code, file trong Workspace đã chọn.
-- ⚙️ **Cài đặt linh hoạt:** Tự động bỏ qua kiểm tra Git repo và xử lý lỗi đường dẫn thực thi của AI.
-- 🔒 **Bảo mật:** Chỉ cho phép người dùng có ID được cấu hình (`ALLOWED_USER_ID`) sử dụng.
+Thông qua tin nhắn Telegram trên điện thoại, bạn có thể quản lý file, tạo thư mục và ra lệnh cho AI thực thi ngay tại các Workspace trên ổ đĩa của mình một cách an toàn và bảo mật. 🚀
 
 ---
 
-## 🛠️ Hướng dẫn cài đặt
+## ⚡ Cài đặt nhanh (3 Bước)
 
-### 1. Tạo Bot Telegram
-
-1. Tìm kiếm và chat với [@BotFather](https://t.me/botfather).
-2. Gõ lệnh `/newbot` và làm theo hướng dẫn để đặt tên Bot.
-3. Sau khi tạo xong, bạn sẽ nhận được một đoạn **API Token** (VD: `123456:ABC-DEF...`). Hãy lưu lại.
-
-### 2. Lấy ID Telegram của bạn
-
-1. Chat với [@userinfobot](https://t.me/userinfobot) để lấy **User ID** (VD: `6471128538`). 
-2. Đây là bước quan trọng để chỉ duy nhất bạn mới có quyền điều khiển Bot.
-
-### 3. Cấu hình Dự án
-
-1. Clone dự án về máy:
+1. **Lấy Token:** Chat với [@BotFather](https://t.me/botfather) trong Telegram để tạo Bot và lấy **API Token**.
+2. **Cấu hình:** Tạo file `.env` và điền Token của bạn:
    ```bash
-   git clone <link-repo-cua-ban>
-   cd flowork
+   TELEGRAM_BOT_TOKEN=YOUR_TOKEN_HERE
    ```
-2. Cài đặt thư viện:
+3. **Chạy Bot:**
    ```bash
    npm install
    ```
-3. Tạo file cấu hình `.env`:
-   - Copy file mẫu: `cp .env.sample .env` (hoặc copy nội dung thủ công).
-   - Điền **API Token** và **User ID** của bạn vào file `.env`.
-   - Chỉnh sửa `PROJECT_DIR` trỏ về thư mục chứa các dự án của bạn (mặc định là `e:/fullstack`).
-
-### 4. Khởi động
-
-1. Biên dịch dự án:
+   Sau đó:
    ```bash
-   npm run build
-   ```
-2. Chạy Bot:
-   ```bash
-   npm start
+   npm run build && npm start
    ```
 
 ---
 
-## 📖 Hướng dẫn sử dụng
+## 📂 Cách sử dụng
 
-| Lệnh | Mô tả |
-|---|---|
-| `/workspaces` | Mở trình duyệt thư mục để chọn nơi làm việc |
-| `/list` | Xem nhanh danh sách file trong dự án hiện tại |
-| `/status` | Xem bạn đang ở Workspace nào và thời gian làm việc |
-| `/stop` | Kết thúc phiên làm việc để chọn Workspace khác |
-| `/help` | Hiện danh sách lệnh trợ giúp này |
-
-**Quy trình làm việc:**
-1. Dùng `/workspaces` -> Duyệt thư mục -> Bấm `✅ CHỌN THƯ MỤC NÀY`.
-2. AI sẽ khởi động tại thư mục đó. 
-3. Bạn chỉ cần chat yêu cầu (VD: "Tạo file index.html có hiệu ứng tuyết rơi"), AI sẽ thực thi ngay lập tức.
-4. Muốn tạo folder mới? Dùng nút `🆕 TẠO MỚI` trong `/workspaces`.
+1. **Chọn dự án:** Dùng lệnh `/workspaces` để duyệt và chọn thư mục bạn muốn làm việc.
+2. **Ra lệnh cho AI:** Sau khi chọn, bạn chỉ cần chat yêu cầu. AI sẽ thực thi ngay tại thư mục đó.
+3. **Tạo mới:** Dùng nút `🆕 TẠO MỚI` trong Explorer để tạo thư mục dự án mới.
 
 ---
 
-## 🏗️ Công nghệ sử dụng
+## 📋 Lệnh cơ bản
 
-- **Core:** Node.js, TypeScript.
-- **Bot Framework:** [GrammY](https://grammy.dev/).
-- **AI Agent:** Codex CLI (Dùng `spawn` process để thực thi lệnh trực tiếp).
-- **Logger:** Custom Logger (Console & File).
-
----
-
-## ⚡ Lộ trình phát triển (Roadmap)
-
-- [x] Phase 1: Bare minimum (Workspace Explorer & Simple Chat).
-- [ ] Phase 2: Checklist & Progress Tracker.
-- [ ] Phase 3: Git Integration & Auto Deployment.
-- [ ] Phase 4: Multi-agent Collaboration.
+- `/workspaces` : Mở trình duyệt thư mục dự án.
+- `/list` : Xem các file trong dự án hiện tại.
+- `/status` : Kiểm tra xem bạn đang đứng ở đâu.
+- `/stop` : Kết thúc phiên làm việc.
+- `/help` : Hiện danh sách lệnh này.
 
 ---
 
-*Chúc bạn có những trải nghiệm làm việc hiệu quả cùng Flowork!*
+## ⚖️ Giấy phép (License)
+
+Dự án này được cấp phép theo tiêu chuẩn **MIT License**. Bạn có quyền tự do sử dụng, chỉnh sửa và chia sẻ.
+
+_Chúc bạn làm việc hiệu quả cùng Flowork!_
