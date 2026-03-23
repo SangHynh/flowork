@@ -32,7 +32,8 @@ export class AgentRunner {
     }
     
     logger.agent(`Fire-and-forget starting at ${workdir}...`);
-    spawn('codex', ['exec', `"${systemPrompt}"`, '--full-auto', '-C', workdir], {
+    spawn('codex', ['exec', `"${systemPrompt}"`, '--full-auto', '--skip-git-repo-check'], {
+      cwd: workdir,
       shell: true,
       windowsHide: true,
       stdio: 'ignore'
@@ -43,13 +44,17 @@ export class AgentRunner {
     const session = this.getActiveSession();
     if (!session) throw new Error('No active session.');
 
-    return this.runCodex(['exec', 'resume', '--last', `"${prompt}"`, '--full-auto', '-C', session.workdir]);
+    return this.runCodex(['exec', 'resume', '--last', `"${prompt}"`, '--full-auto', '--skip-git-repo-check'], session.workdir);
   }
 
-  private runCodex(args: string[]): Promise<string> {
+  private runCodex(args: string[], cwd?: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      logger.agent(`Running: codex ${args.join(' ')}`);
-      const process = spawn('codex', args, { shell: true, windowsHide: true });
+      logger.agent(`Running: codex ${args.join(' ')} (at ${cwd || './'})`);
+      const process = spawn('codex', args, { 
+        shell: true, 
+        windowsHide: true,
+        cwd: cwd
+      });
       let output = '';
       let error = '';
 
