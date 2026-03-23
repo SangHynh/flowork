@@ -1,25 +1,25 @@
 # 🚀 Flowork — AI Workspace Bot `v1.0.0`
 
-**Flowork** là giải pháp "Biến Telegram thành trung tâm điều khiển dự án". Đây là công cụ lý tưởng giúp bạn duy trì tiến độ công việc ngay cả khi đã rời bàn máy tính: dù bạn đang bận **nấu cơm, hay đang ẻ trong WC 🚽, hoặc đang bận bịu ở bất cứ đâu** mà không tiện ngồi trước màn hình.
+**Flowork** là giải pháp "Biến Telegram thành remote điều khiển agent". Đây là tool cực kỳ ok giúp bạn duy trì tiến độ công việc ngay cả khi đã rời bàn máy tính: dù bạn đang bận **ăn cơm, đang ẻ, hay đang ở bất cứ đâu** mà không thể ngồi trước màn hình.
 
-Thông qua tin nhắn Telegram trên điện thoại, bạn có thể quản lý file, tạo thư mục và ra lệnh cho AI thực thi ngay tại các Workspace trên ổ đĩa của mình một cách an toàn và bảo mật. 🚀
+**Điểm ok:** Flowork tích hợp các Model AI ngon và miễn phí thông qua sức mạnh của **Codex CLI**. Bạn không cần tốn tiền mua API Key hay cấu hình lè nhè; AI sẽ thực thi yêu cầu của bạn nhanh chóng, an toàn và ok ngay trên telegram.
 
 ---
 
-## ⚡ Cài đặt nhanh (3 Bước)
+## ⚡ Cài đặt nhanh
 
-1. **Lấy Token:** Chat với [@BotFather](https://t.me/botfather) trong Telegram để tạo Bot và lấy **API Token**.
-2. **Cấu hình:** Tạo file `.env` và điền Token của bạn:
+1. **Cài đặt Codex CLI:** Project này yêu cầu Codex để thực hiện lệnh AI.
+   ```bash
+   npm i -g @google/codex
+   ```
+2. **Lấy Token:** Chat với [@BotFather](https://t.me/botfather) trong Telegram để tạo Bot và lấy **API Token**.
+3. **Cấu hình:** Tạo file `.env` và điền Token của bạn:
    ```bash
    TELEGRAM_BOT_TOKEN=YOUR_TOKEN_HERE
    ```
-3. **Chạy Bot:**
+4. **Chạy Bot:**
    ```bash
-   npm install
-   ```
-   Sau đó:
-   ```bash
-   npm run build && npm start
+   npm install && npm run build && npm start
    ```
 
 ---
@@ -42,8 +42,4 @@ Thông qua tin nhắn Telegram trên điện thoại, bạn có thể quản lý
 
 ---
 
-## ⚖️ Giấy phép (License)
-
-Dự án này được cấp phép theo tiêu chuẩn **MIT License**. Bạn có quyền tự do sử dụng, chỉnh sửa và chia sẻ.
-
-_Chúc bạn làm việc hiệu quả cùng Flowork!_
+_Chúc bạn làm việc hiệu quả!_
