@@ -28,6 +28,18 @@ Ghi chú:
 - Nếu không cấu hình `PROJECTS_DIR`, bot sẽ mặc định dùng `e:\fullstack`.
 - Bot sẽ dừng ngay khi khởi động nếu thiếu `TELEGRAM_BOT_TOKEN`, thiếu `ALLOWED_USER_ID`, hoặc không tìm thấy `codex`.
 
+### Cách lấy `ALLOWED_USER_ID`
+
+Bạn có thể lấy Telegram user id của mình bằng một trong các cách sau:
+
+1. Nhắn cho bot như `@myidbot`, `@userinfobot`, hoặc bot tương tự và lấy số `user id` mà bot trả về.
+2. Dùng một bot helper bất kỳ có chức năng trả `Your ID` hoặc `user_id`.
+
+Lưu ý:
+
+- Cần lấy `user id` của chính tài khoản Telegram của bạn.
+- Không dùng username, số điện thoại, hoặc chat id nhóm để điền vào `ALLOWED_USER_ID`.
+
 ## Chạy bot
 
 ```bash

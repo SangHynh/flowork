@@ -191,9 +191,7 @@ export function setupHandlers(bot: Bot) {
   bot.command('stop', async (ctx) => {
     logger.user('/stop', ctx.from?.id);
     runner.stopSession();
-    await ctx.reply(
-      '🛑 Đã xóa state phiên hiện tại. Gõ /workspaces để chọn lại.',
-    );
+    await ctx.reply('🛑 Phiên đã kết thúc. Gõ /start để bắt đầu lại.');
   });
 
   // /status command
