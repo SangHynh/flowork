@@ -100,9 +100,10 @@ Bạn **phải bật tính năng này thủ công** trong cài đặt ChatGPT:
 
 | Phiên bản | Ngày | Nội dung cập nhật |
 |:---:|:---:|:---|
-| `v1.2.1` | 24/03/2026 | **Response Formatter & UX Update**: Tự động hiện nút bấm xem file, chia nhỏ tin nhắn dài, format Markdown, parse lỗi CLI sang tiếng Việt, và thêm hệ thống troll người lạ. |
-| `v1.1.0` | 24/03/2026 | **Remote Auth**: Thêm lệnh `/login`, `/logout`, `/auth_status` hỗ trợ đổi tài khoản từ xa qua Device Auth. |
-| `v1.0.1` | 23/03/2026 | **Initial Commit**: Core logic điều khiển Codex CLI qua Telegram, Workspace Explorer, quản lý session. |
+| `v1.2.1` | 24/03/2026 | **UX Excellence**: Thêm Response Formatter (Auto View File buttons, Markdown, Splitting), dịch lỗi CLI sang tiếng Việt, và nâng cấp hệ thống troll. |
+| `v1.2.0` | 24/03/2026 | **Remote Auth**: Thêm lệnh `/login`, `/logout`, `/auth_status` qua Device Auth (OAuth). |
+| `v1.1.0` | 22/03/2026 | **Localization & Explorer**: Tiếng Việt hóa bộ lệnh, thêm `/workspaces`, `/status`, `/stop`, `/list`, `/help`. |
+| `v1.0.1` | 23/03/2026 | **Initial Release**: Core logic điều khiển Codex CLI qua Telegram, Workspace Explorer cơ bản. |
 
 ---
 *Người dùng tự cân nhắc mức độ rủi ro phù hợp với nhu cầu sử dụng của mình.*
