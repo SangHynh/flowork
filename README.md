@@ -1,6 +1,6 @@
 # Flowork `v1.2.1`
 
-![Flowork Demo](./docs/assets/flowork.gif)
+<video src="./docs/assets/flowork.mp4" autoplay loop muted playsinline controls style="width:100%"></video>
 
 Flowork là bot Telegram giúp bạn điều khiển AI agent từ xa ngay trên máy tính của mình thông qua `codex` CLI. Điểm thực dụng nhất của project là người dùng có thể tận dụng các model mạnh sẵn có trong hệ sinh thái CLI mà không cần tự dựng luồng API riêng, không phải cấu hình phức tạp, và cũng không phải tốn thêm chi phí kiểu gọi API theo request như các cách tích hợp truyền thống.
 
@@ -110,11 +110,11 @@ _Người dùng tự cân nhắc mức độ rủi ro phù hợp với nhu cầu
 
 ## Lịch sử phiên bản (Release History)
 
-| Phiên bản |    Ngày    | Nội dung cập nhật                                                                                                                                   |
-| :-------: | :--------: | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phiên bản |    Ngày    | Nội dung cập nhật                                                                                                       |
+| :-------: | :--------: | :---------------------------------------------------------------------------------------------------------------------- |
 | `v1.2.1`  | 24/03/2026 | **UX Excellence**: Thêm Response Formatter (Auto View File buttons, Markdown, Splitting), dịch lỗi CLI sang tiếng Việt. |
-| `v1.2.0`  | 24/03/2026 | **Remote Auth**: Thêm lệnh `/login`, `/logout`, `/auth_status` qua Device Auth (OAuth).                                                             |
-| `v1.1.0`  | 22/03/2026 | **Localization & Explorer**: Tiếng Việt hóa bộ lệnh, thêm `/workspaces`, `/status`, `/stop`, `/list`, `/help`.                                      |
-| `v1.0.1`  | 23/03/2026 | **Initial Release**: Core logic điều khiển Codex CLI qua Telegram, Workspace Explorer cơ bản.                                                       |
+| `v1.2.0`  | 24/03/2026 | **Remote Auth**: Thêm lệnh `/login`, `/logout`, `/auth_status` qua Device Auth (OAuth).                                 |
+| `v1.1.0`  | 22/03/2026 | **Localization & Explorer**: Tiếng Việt hóa bộ lệnh, thêm `/workspaces`, `/status`, `/stop`, `/list`, `/help`.          |
+| `v1.0.1`  | 23/03/2026 | **Initial Release**: Core logic điều khiển Codex CLI qua Telegram, Workspace Explorer cơ bản.                           |
 
 ---
