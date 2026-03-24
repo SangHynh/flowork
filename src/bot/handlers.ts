@@ -359,13 +359,14 @@ export function setupHandlers(bot: Bot) {
   bot.command('logout', async (ctx) => {
     logger.user('/logout', ctx.from?.id);
     await ctx.reply('⏳ Đang đăng xuất...');
-    try {
-      const result = await runner.codexLogout();
-      await ctx.reply(`✅ ${result}`);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      await ctx.reply(`❌ Lỗi đăng xuất: ${message}`);
-    }
+    
+    // Non-blocking logout
+    runner.codexLogout()
+      .then(result => ctx.reply(`✅ ${result}`))
+      .catch(error => {
+        const message = error instanceof Error ? error.message : String(error);
+        ctx.reply(`❌ Lỗi đăng xuất: ${message}`);
+      });
   });
 
   // /login command
@@ -373,7 +374,9 @@ export function setupHandlers(bot: Bot) {
     logger.user('/login', ctx.from?.id);
     await ctx.reply('⏳ Đang khởi tạo đăng nhập...');
 
-    const result = await runner.codexLoginDeviceAuth((url, code) => {
+    // Non-blocking login: the promise is handled via .then/.catch
+    // allowing the command handler to finish early.
+    runner.codexLoginDeviceAuth((url, code) => {
       ctx.reply(
         `🔐 *Đăng nhập Codex*\n\n` +
           `1️⃣ Mở link này trên trình duyệt:\n${url}\n\n` +
@@ -382,13 +385,19 @@ export function setupHandlers(bot: Bot) {
           `⚠️ _Không chia sẻ mã này cho ai._`,
         { parse_mode: 'Markdown' },
       );
+    }).then(result => {
+      if (result.success) {
+        ctx.reply('✅ Đăng nhập Codex thành công! 🎉');
+      } else {
+        // Only notify if it wasn't a manual cancel or duplicate process
+        if (!result.message.includes('đã bị hủy')) {
+          ctx.reply(`❌ Lỗi đăng nhập: ${result.message}`);
+        }
+      }
+    }).catch(error => {
+      const message = error instanceof Error ? error.message : String(error);
+      ctx.reply(`❌ Lỗi tiến trình đăng nhập: ${message}`);
     });
-
-    if (result.success) {
-      await ctx.reply('✅ Đăng nhập thành công! 🎉');
-    } else {
-      await ctx.reply(`❌ ${result.message}`);
-    }
   });
 
   // /auth_status command
