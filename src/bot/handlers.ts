@@ -35,6 +35,10 @@ const unauthorizedMessages = [
   'Đã báo công an rồi nha, đợi xíu họ tới xích bớt rảnh.',
   'Nghịch cái gì? Bot này đang làm ra tiền, bạn thì đang làm ra cái gì? 🙄',
   'Xin vui lòng liên hệ admin để được... chửi thêm.',
+  'Cửa sổ tâm hồn của bạn chắc đang bị virus rồi mới mò vào đây.',
+  'Đã bảo là không được rồi mà, lì thế?',
+  'Bạn có biết định nghĩa của sự điên rồ là gì không? Là nhấn nút này lặp đi lặp lại và hy vọng kết quả khác đi. - Einstein (hoặc Vaas).',
+  'Unauthorized. Vui lòng quay về hành tinh của bạn.',
 ];
 
 function parseCodexError(raw: string): string {
@@ -58,6 +62,12 @@ function parseCodexError(raw: string): string {
 
   if (text.includes('500') && text.includes('internal server error')) {
     return '🔥 Server OpenAI đang lỗi (500). Thử lại sau.';
+  }
+
+  if (text.includes('usage limit') || text.includes('upgrade to plus')) {
+    const timeMatch = raw.match(/try again at (.*)\./i);
+    const timeInfo = timeMatch ? `\n⏳ Thử lại vào: *${timeMatch[1]}*` : '';
+    return `🚫 *Hết hạn mức sử dụng (Usage Limit)*${timeInfo}\n\nVui lòng nâng cấp gói Plus hoặc đợi đến thời gian trên để tiếp tục.`;
   }
 
   if (text.includes('timeout') || text.includes('timed out')) {
@@ -152,7 +162,7 @@ const helpText = `
 🛑 /stop : Xóa state phiên hiện tại
 🔑 /login : Đăng nhập tài khoản Codex
 🚪 /logout : Đăng xuất tài khoản Codex
-🔒 /auth\_status : Kiểm tra trạng thái đăng nhập
+🔒 /auth\\_status : Kiểm tra trạng thái đăng nhập
 ❓ /help : Hiện danh sách lệnh này
 
 💬 *Gõ tin nhắn:* Trò chuyện hoặc yêu cầu AI làm việc ngay tại workspace đã chọn.

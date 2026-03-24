@@ -33,6 +33,18 @@ async function bootstrap() {
   const bot = new Bot(botToken);
 
   setupHandlers(bot);
+  
+  // Global error handler
+  bot.catch((err) => {
+    const ctx = err.ctx;
+    logger.error(`Error while handling update ${ctx.update.update_id}:`);
+    const e = err.error;
+    if (e instanceof Error) {
+      logger.error(e.message);
+    } else {
+      logger.error(String(e));
+    }
+  });
 
   logger.system('Bot is starting...');
   await bot.start();
