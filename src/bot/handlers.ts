@@ -25,20 +25,8 @@ const unauthorizedMessages = [
   'Hệ thống đã ghi nhận. Cũng không làm gì đâu, nhưng ghi nhận.',
   'Đây là tài sản riêng. Bro đang đứng trước cửa nhà người ta mà không biết.',
   'Thử lần nữa xem sao. (Đừng thử, vô ích lắm.)',
-  'Nhấn nữa đi, mình sẽ gửi địa chỉ của bạn cho... à mà thôi.',
   'Có chí cầu tiến đó, nhưng sai chỗ rồi.',
-  'Ủa alo? Không ai ở nhà đâu, về đi.',
-  'Cứ thử đi, mình đang log lại hết đó 😈',
-  'Vừa thấy 1 người rảnh rỗi quá mức cho phép này.',
-  '403 Forbidden. Bản dịch tiếng Việt: Biến.',
   'Thằng bé này lỳ thật sự.',
-  'Đã báo công an rồi nha, đợi xíu họ tới xích bớt rảnh.',
-  'Nghịch cái gì? Bot này đang làm ra tiền, bạn thì đang làm ra cái gì? 🙄',
-  'Xin vui lòng liên hệ admin để được... chửi thêm.',
-  'Cửa sổ tâm hồn của bạn chắc đang bị virus rồi mới mò vào đây.',
-  'Đã bảo là không được rồi mà, lì thế?',
-  'Bạn có biết định nghĩa của sự điên rồ là gì không? Là nhấn nút này lặp đi lặp lại và hy vọng kết quả khác đi. - Einstein (hoặc Vaas).',
-  'Unauthorized. Vui lòng quay về hành tinh của bạn.',
 ];
 
 function parseCodexError(raw: string): string {
