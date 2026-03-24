@@ -1,6 +1,6 @@
 # Flowork `v1.2.1`
 
-![Flowork Demo](./docs/assets/flowork.mp4)
+![Flowork Demo](./docs/assets/flowork.gif)
 
 Flowork là bot Telegram giúp bạn điều khiển AI agent từ xa ngay trên máy tính của mình thông qua `codex` CLI. Điểm thực dụng nhất của project là người dùng có thể tận dụng các model mạnh sẵn có trong hệ sinh thái CLI mà không cần tự dựng luồng API riêng, không phải cấu hình phức tạp, và cũng không phải tốn thêm chi phí kiểu gọi API theo request như các cách tích hợp truyền thống.
 
