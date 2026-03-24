@@ -9,12 +9,64 @@ const runner = new AgentRunner();
 // State to track users creating a new folder
 const pendingCreations = new Map<number, string>(); // userId -> parentPath
 const unauthorizedMessages = [
-  'Sai cửa rồi bạn ơi, đây không phải bot của bạn.',
+  'Sai cửa rồi bro ơi, đây không phải bot của bro.',
   'Lượn nhẹ nha, khu này có chủ rồi.',
   'Ấn linh tinh gì thế, bot này không tiếp khách lạ.',
-  'Bạn không có vé vào cửa đâu, quay xe giúp mình.',
-  'Đừng nghịch nữa, bot này đang bận phục vụ chủ nhân.',
+  'Bro không có vé vào cửa đâu, quay xe giúp mình.',
+  'Đừng nghịch nữa, bot này đã có chủ rồi.',
+  'Mẹ bạn béo.',
+  'Não để ở nhà rồi à mà mò vào đây?',
+  'Bot này không dành cho người như bro. Thật ra là không dành cho bro luôn.',
+  'Ấn nữa đi, ấn nữa xem có gì không. Spoiler: không có gì đâu, giống bro vậy.',
+  'Unauthorized. Dịch nôm: CÚT.',
+  'Xin lỗi, bot này không hỗ trợ IQ dưới ngưỡng tối thiểu.',
+  'Bro vừa waste 3 giây cuộc đời. Chúc mừng.',
+  'Hệ thống đã ghi nhận. Cũng không làm gì đâu, nhưng ghi nhận.',
+  'Đây là tài sản riêng. Bro đang đứng trước cửa nhà người ta mà không biết.',
+  'Thử lần nữa xem sao. (Đừng thử, vô ích lắm.)',
 ];
+
+function parseCodexError(raw: string): string {
+  const text = raw.toLowerCase();
+
+  if (text.includes('401') && text.includes('unauthorized')) {
+    return '🔴 Chưa đăng nhập hoặc phiên đã hết hạn.\nDùng /login để đăng nhập lại.';
+  }
+
+  if (text.includes('429') || text.includes('rate limit')) {
+    return '⏳ Bị rate limit. Đợi một lát rồi thử lại.';
+  }
+
+  if (
+    text.includes('quota') ||
+    text.includes('insufficient') ||
+    text.includes('billing')
+  ) {
+    return '💳 Hết quota hoặc lỗi billing. Kiểm tra tài khoản OpenAI.';
+  }
+
+  if (text.includes('500') && text.includes('internal server error')) {
+    return '🔥 Server OpenAI đang lỗi (500). Thử lại sau.';
+  }
+
+  if (text.includes('timeout') || text.includes('timed out')) {
+    return '⏰ Hết thời gian chờ phản hồi. Thử lại.';
+  }
+
+  if (text.includes('enotfound') || text.includes('network')) {
+    return '🌐 Lỗi kết nối mạng. Kiểm tra internet.';
+  }
+
+  // Fallback: trả dòng cuối có ý nghĩa, tối đa 200 ký tự
+  const lines = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !l.startsWith('---'));
+  const lastMeaningful = lines[lines.length - 1] || raw;
+  return lastMeaningful.length > 200
+    ? lastMeaningful.slice(0, 200) + '...'
+    : lastMeaningful;
+}
 
 function parseAllowedUserIds() {
   return new Set(
@@ -87,6 +139,9 @@ const helpText = `
 📋 /list : Xem các file trong project
 ℹ️ /status : Xem workspace hiện tại
 🛑 /stop : Xóa state phiên hiện tại
+🔑 /login : Đăng nhập tài khoản Codex
+🚪 /logout : Đăng xuất tài khoản Codex
+🔒 /auth\_status : Kiểm tra trạng thái đăng nhập
 ❓ /help : Hiện danh sách lệnh này
 
 💬 *Gõ tin nhắn:* Trò chuyện hoặc yêu cầu AI làm việc ngay tại workspace đã chọn.
@@ -253,6 +308,58 @@ export function setupHandlers(bot: Bot) {
     await ctx.reply(helpText, { parse_mode: 'Markdown' });
   });
 
+  // /logout command
+  bot.command('logout', async (ctx) => {
+    logger.user('/logout', ctx.from?.id);
+    await ctx.reply('⏳ Đang đăng xuất...');
+    try {
+      const result = await runner.codexLogout();
+      await ctx.reply(`✅ ${result}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      await ctx.reply(`❌ Lỗi đăng xuất: ${message}`);
+    }
+  });
+
+  // /login command
+  bot.command('login', async (ctx) => {
+    logger.user('/login', ctx.from?.id);
+    await ctx.reply('⏳ Đang khởi tạo đăng nhập...');
+
+    const result = await runner.codexLoginDeviceAuth((url, code) => {
+      ctx.reply(
+        `🔐 *Đăng nhập Codex*\n\n` +
+          `1️⃣ Mở link này trên trình duyệt:\n${url}\n\n` +
+          `2️⃣ Nhập mã xác thực:\n\`${code}\`\n\n` +
+          `⏰ Mã hết hạn sau 15 phút\n` +
+          `⚠️ _Không chia sẻ mã này cho ai._`,
+        { parse_mode: 'Markdown' },
+      );
+    });
+
+    if (result.success) {
+      await ctx.reply('✅ Đăng nhập thành công! 🎉');
+    } else {
+      await ctx.reply(`❌ ${result.message}`);
+    }
+  });
+
+  // /auth_status command
+  bot.command('auth_status', async (ctx) => {
+    logger.user('/auth_status', ctx.from?.id);
+    const status = await runner.codexAuthStatus();
+    if (status.loggedIn) {
+      await ctx.reply(`🟢 *Đã đăng nhập*\n${status.message}`, {
+        parse_mode: 'Markdown',
+      });
+    } else {
+      await ctx.reply(
+        `🔴 *Chưa đăng nhập*\n${status.message}\n\nDùng /login để đăng nhập.`,
+        { parse_mode: 'Markdown' },
+      );
+    }
+  });
+
   // Handle all messages
   bot.on('message:text', async (ctx) => {
     const userId = ctx.from.id;
@@ -316,9 +423,10 @@ export function setupHandlers(bot: Bot) {
       logger.bot(response);
       await ctx.reply(`${response}\n\n⏱️ ${duration}s`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      logger.error(`Error processing message: ${message}`);
-      await ctx.reply(`❌ Lỗi: ${message}`);
+      const raw = error instanceof Error ? error.message : String(error);
+      logger.error(`Error processing message: ${raw}`);
+      const friendly = parseCodexError(raw);
+      await ctx.reply(`❌ ${friendly}`);
     }
   });
 }
