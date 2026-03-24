@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AgentRunner } from '../agent/runner';
 import { logger } from '../utils/logger';
+import { ResponseFormatter } from '../utils/formatter';
 
 const runner = new AgentRunner();
 
@@ -24,6 +25,16 @@ const unauthorizedMessages = [
   'Hệ thống đã ghi nhận. Cũng không làm gì đâu, nhưng ghi nhận.',
   'Đây là tài sản riêng. Bro đang đứng trước cửa nhà người ta mà không biết.',
   'Thử lần nữa xem sao. (Đừng thử, vô ích lắm.)',
+  'Nhấn nữa đi, mình sẽ gửi địa chỉ của bạn cho... à mà thôi.',
+  'Có chí cầu tiến đó, nhưng sai chỗ rồi.',
+  'Ủa alo? Không ai ở nhà đâu, về đi.',
+  'Cứ thử đi, mình đang log lại hết đó 😈',
+  'Vừa thấy 1 người rảnh rỗi quá mức cho phép này.',
+  '403 Forbidden. Bản dịch tiếng Việt: Biến.',
+  'Thằng bé này lỳ thật sự.',
+  'Đã báo công an rồi nha, đợi xíu họ tới xích bớt rảnh.',
+  'Nghịch cái gì? Bot này đang làm ra tiền, bạn thì đang làm ra cái gì? 🙄',
+  'Xin vui lòng liên hệ admin để được... chửi thêm.',
 ];
 
 function parseCodexError(raw: string): string {
@@ -277,7 +288,7 @@ export function setupHandlers(bot: Bot) {
         .filter((f) => !f.startsWith('.'));
       const listText =
         files.length > 0
-          ? files.map((f) => `- ${f}`).join('\n')
+          ? files.map((f) => `- \`${f}\``).join('\n')
           : '(Thư mục trống)';
 
       await ctx.reply(
@@ -288,6 +299,44 @@ export function setupHandlers(bot: Bot) {
       );
     } catch (err) {
       await ctx.reply(`❌ Không thể đọc danh sách file: ${err}`);
+    }
+  });
+
+  // View file callback
+  bot.callbackQuery(/^view_file:(.*)$/, async (ctx) => {
+    const filename = ctx.match[1];
+    const session = runner.getActiveSession();
+    if (!session) {
+      return ctx.answerCallbackQuery({
+        text: '⚠️ Không có phiên hoạt động.',
+        show_alert: true,
+      });
+    }
+
+    const filePath = path.join(session.workdir, filename);
+    if (!fs.existsSync(filePath)) {
+      return ctx.answerCallbackQuery({
+        text: '❌ File không còn tồn tại.',
+        show_alert: true,
+      });
+    }
+
+    await ctx.answerCallbackQuery();
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const chunks = ResponseFormatter.split(content);
+
+      await ctx.reply(`📄 *Nội dung tệp: \`${filename}\`*`, {
+        parse_mode: 'Markdown',
+      });
+
+      for (const chunk of chunks) {
+        await ctx.reply(`\`\`\`\n${chunk}\n\`\`\``, {
+          parse_mode: 'Markdown',
+        });
+      }
+    } catch (err) {
+      await ctx.reply(`❌ Lỗi đọc file: ${err}`);
     }
   });
 
@@ -421,7 +470,44 @@ export function setupHandlers(bot: Bot) {
       const response = output || '✅ Hoàn tất.';
 
       logger.bot(response);
-      await ctx.reply(`${response}\n\n⏱️ ${duration}s`);
+
+      // Detect files in response to show buttons
+      const filenames = ResponseFormatter.extractFilenames(response);
+      const existingFiles = filenames.filter((f) =>
+        fs.existsSync(path.join(session.workdir, f)),
+      );
+
+      const chunks = ResponseFormatter.split(response);
+      for (let i = 0; i < chunks.length; i++) {
+        const isLast = i === chunks.length - 1;
+        const text = isLast ? `${chunks[i]}\n\n⏱️ ${duration}s` : chunks[i];
+
+        const keyboard = new InlineKeyboard();
+        if (isLast && existingFiles.length > 0) {
+          existingFiles.slice(0, 5).forEach((f) => {
+            keyboard.text(`📄 Xem ${f}`, `view_file:${f}`);
+            keyboard.row();
+          });
+        }
+
+        try {
+          // Attempt with markdown
+          await ctx.reply(text, {
+            parse_mode: 'Markdown',
+            reply_markup:
+              keyboard.inline_keyboard.length > 0 ? keyboard : undefined,
+          });
+        } catch (err) {
+          // Fallback to plain text if markdown formatting is invalid
+          logger.warn(
+            `Markdown formatting failed, falling back to plain text: ${err}`,
+          );
+          await ctx.reply(text, {
+            reply_markup:
+              keyboard.inline_keyboard.length > 0 ? keyboard : undefined,
+          });
+        }
+      }
     } catch (error: unknown) {
       const raw = error instanceof Error ? error.message : String(error);
       logger.error(`Error processing message: ${raw}`);

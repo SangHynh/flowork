@@ -1,4 +1,4 @@
-# Flowork `v1.1.0`
+# Flowork `v1.2.1`
 
 Flowork là bot Telegram giúp bạn điều khiển AI agent từ xa ngay trên máy tính của mình thông qua `codex` CLI. Điểm thực dụng nhất của project là người dùng có thể tận dụng các model mạnh sẵn có trong hệ sinh thái CLI mà không cần tự dựng luồng API riêng, không phải cấu hình phức tạp, và cũng không phải tốn thêm chi phí kiểu gọi API theo request như các cách tích hợp truyền thống.
 
@@ -68,62 +68,41 @@ npm start
 - `/logout`: đăng xuất tài khoản Codex
 - `/auth_status`: kiểm tra trạng thái đăng nhập Codex hiện tại
 
+## Các tính năng thông minh mới (v1.2.x)
+
+### 📄 Tự động phát hiện và xem file (Auto View File)
+Khi AI nhắc tới một file trong workspace (ví dụ: "mình đã tạo `index.html`"), bot sẽ tự động kiểm tra sự tồn tại của file đó và hiện nút bấm **"📄 Xem index.html"** ngay dưới tin nhắn. Bạn có thể Click để xem nội dung file ngay lập tức.
+
+### 📝 Định dạng thông minh
+Bot tự động nhận diện và hiển thị Markdown từ AI (bôi đậm, code block, link). Nếu nội dung quá dài, bot sẽ tự động chia nhỏ thành nhiều tin nhắn để đảm bảo bạn nhận được đầy đủ thông tin mà không bị giới hạn bởi Telegram.
+
+### 🛡️ Xử lý lỗi thân thiện
+Thay vì những dòng lỗi CLI khó hiểu, bot sẽ dịch các lỗi phổ biến (401 Unauthorized, 429 Rate Limit, 500 Server Error) sang tiếng Việt và hướng dẫn bạn cách xử lý (ví dụ: nhắc bạn dùng `/login`).
+
 ## Đăng nhập từ xa (Login/Logout)
 
 > ⚠️ **Không khuyến khích sử dụng thường xuyên.** Nếu có thể, hãy đăng nhập trực tiếp trên máy bằng `codex login` hoặc `codex login --device-auth` trong terminal.
 
-Bot hỗ trợ đăng nhập và đăng xuất tài khoản Codex từ xa qua Telegram, tiện cho trường hợp token hết giữa chừng và bạn đang không ngồi trước máy tính.
-
-### Cách dùng
-
-1. Gõ `/login` trong chat với bot.
-2. Bot sẽ gửi về một **đường link** và một **mã xác thực một lần (OTP)**.
-3. Mở link trên trình duyệt điện thoại, đăng nhập tài khoản, nhập mã OTP.
-4. Bot sẽ báo đăng nhập thành công sau khi xác thực xong.
-5. Để đăng xuất, dùng `/logout`.
+Bot hỗ trợ đăng nhập và đăng xuất tài khoản Codex từ xa qua Telegram bằng **OAuth Device Code Flow**.
 
 ### Yêu cầu bắt buộc trước khi dùng `/login`
 
-Tính năng này dùng **OAuth Device Code Flow** của OpenAI. Trước khi chạy lần đầu, bạn **phải bật tính năng này thủ công** trong cài đặt ChatGPT:
+Bạn **phải bật tính năng này thủ công** trong cài đặt ChatGPT:
+[chatgpt.com](https://chatgpt.com) → avatar → **Settings** → **Security** → Bật **"Device code authorization for Codex"**.
 
-1. Vào [chatgpt.com](https://chatgpt.com) → click avatar → **Settings**.
-2. Vào tab **Security** (Bảo mật).
-3. Tìm mục **"Device code authorization for Codex"** → **Bật lên**.
+## Bảo mật và quyền riêng tư
 
-Nếu chưa bật, OpenAI sẽ từ chối xác thực ngay cả khi bạn mở đúng link.
+- **Quyền riêng tư:** Chat giữa bạn và bot là riêng tư (1-1). Người lạ không thể xem lịch sử của bạn.
+- **Bảo mật:** Không chia sẻ mã OTP (Device Code) cho bất kỳ ai. Ưu tiên đăng nhập trực tiếp trên máy tính.
+- **Troll người lạ:** Bot được trang bị hệ thống tin nhắn "thân thiện" dành riêng cho những kẻ cố tình mò vào bot của bạn mà không có quyền.
 
-### Lưu ý bảo mật khi dùng login từ xa
+## Lịch sử phiên bản (Release History)
 
-- **Mã OTP chỉ dùng một lần và hết hạn sau 15 phút.** Nếu không kịp xác thực, gõ `/login` lại để lấy mã mới.
-- **Không chia sẻ mã OTP với bất kỳ ai**, kể cả người tự xưng là hỗ trợ kỹ thuật. Device code là mục tiêu phishing phổ biến.
-- Quá trình đăng nhập gửi link và mã OTP qua Telegram — tức là thông tin này đi qua server của Telegram. Nếu tài khoản Telegram của bạn bị xâm phạm, mã có thể bị lộ.
-- Vì lý do trên, **nên ưu tiên đăng nhập trực tiếp trên máy** hơn là qua bot khi có điều kiện.
+| Phiên bản | Ngày | Nội dung cập nhật |
+|:---:|:---:|:---|
+| `v1.2.1` | 24/03/2026 | **Response Formatter & UX Update**: Tự động hiện nút bấm xem file, chia nhỏ tin nhắn dài, format Markdown, parse lỗi CLI sang tiếng Việt, và thêm hệ thống troll người lạ. |
+| `v1.1.0` | 24/03/2026 | **Remote Auth**: Thêm lệnh `/login`, `/logout`, `/auth_status` hỗ trợ đổi tài khoản từ xa qua Device Auth. |
+| `v1.0.1` | 23/03/2026 | **Initial Commit**: Core logic điều khiển Codex CLI qua Telegram, Workspace Explorer, quản lý session. |
 
-## Bảo mật và giới hạn
-
-- Đây là bot điều khiển agent trên máy thật. Chỉ nên cấp quyền cho user bạn tin tưởng.
-- Không nên chia sẻ token bot, file `.env`, hoặc Telegram user id được cấp quyền.
-- Không nên gửi thông tin nhạy cảm qua bot, ví dụ mật khẩu, private key, API key, cookie, dữ liệu khách hàng, hoặc tài liệu nội bộ quan trọng.
-- Không nên dùng bot để đọc, trích xuất, sao chép, hoặc gửi ra ngoài các dữ liệu mà bạn không muốn lộ.
-
-### Về quyền riêng tư trên Telegram
-
-Bot Telegram **không vô hình** — bất kỳ ai có link hoặc tên bot đều có thể tìm thấy và nhắn tin. Tuy nhiên:
-
-- Mỗi người dùng chỉ thấy **cuộc trò chuyện của chính họ** với bot, không thể xem lịch sử của người khác. Đây là cơ chế cố định của nền tảng Telegram.
-- Người không có trong `ALLOWED_USER_ID` sẽ bị chặn toàn bộ thao tác ngay lập tức.
-
-Dù vậy, cần lưu ý:
-
-- Telegram là **bên thứ ba**. Về mặt kỹ thuật, tin nhắn đi qua server của Telegram trước khi đến bot. Telegram có chính sách mã hóa và bảo mật riêng.
-- Nếu tài khoản Telegram của bạn bị lộ hoặc xâm phạm, lịch sử chat với bot cũng có thể bị truy cập.
-- Nên xem Flowork là công cụ tiện lợi cho workspace cá nhân, không phải kênh an toàn để xử lý dữ liệu nhạy cảm.
-
-Người dùng tự cân nhắc mức độ rủi ro phù hợp với nhu cầu sử dụng của mình.
-
-## Ghi chú kỹ thuật
-
-- State runtime hiện được lưu trong `state/session.json`.
-- Build output nằm ở `dist/`.
-- Bot kiểm tra `codex` CLI ngay lúc khởi động để tránh chạy nửa chừng.
-- `codex login --device-auth` là luồng OAuth Device Code tiêu chuẩn — bot chỉ parse và chuyển tiếp link/mã OTP, không lưu trữ thông tin xác thực.
+---
+*Người dùng tự cân nhắc mức độ rủi ro phù hợp với nhu cầu sử dụng của mình.*
