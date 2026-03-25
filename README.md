@@ -244,13 +244,6 @@ Kiểm tra lại:
 - Tài khoản Telegram của bạn có đúng `ALLOWED_USER_ID` hay không
 - Bạn đã restart bot sau khi sửa `.env` hay chưa
 
-## Bảo mật và quyền riêng tư
-
-- Bot Telegram không phải hệ thống vô hình. Bất kỳ ai biết username bot đều có thể tìm thấy bot và nhắn tin.
-- Chỉ những user nằm trong `ALLOWED_USER_ID` mới được thực hiện command và gửi message hợp lệ.
-- Telegram là bên thứ ba, vì vậy không nên xem đây là kênh an toàn để xử lý dữ liệu quá nhạy cảm.
-- Không chia sẻ device code, OTP, hay thông tin đăng nhập cho người khác.
-
 ## Scripts
 
 `package.json` hiện có các lệnh sau:
