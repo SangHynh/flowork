@@ -6,16 +6,119 @@ Flowork là bot Telegram giúp bạn điều khiển AI agent từ xa ngay trên
 
 Mục tiêu của Flowork là biến Telegram thành một chiếc remote điều khiển workspace: bạn chọn đúng thư mục dự án, gửi yêu cầu ngay trong khung chat, và agent sẽ chạy trực tiếp trong workspace đó. Cách này đặc biệt hữu ích khi bạn không ngồi trước máy tính, ví dụ đang ra ngoài, đang ăn uống, đang di chuyển, hoặc chỉ đơn giản là muốn theo dõi và ra lệnh nhanh từ điện thoại mà vẫn giữ được luồng làm việc liên tục.
 
+## Tổng quan nhanh
+
+Flowork hoạt động theo luồng sau:
+
+1. Bot Telegram nhận lệnh và tin nhắn từ tài khoản của bạn.
+2. Bạn chọn workspace bằng `/workspaces`.
+3. Flowork gọi `codex exec` trong workspace đã chọn.
+4. Các tin nhắn tiếp theo sẽ được tiếp tục trong phiên gần nhất bằng `codex exec resume --last`.
+
 ## Yêu cầu
 
-- Node.js
-- `codex` CLI đã được cài và có thể gọi bằng lệnh `codex`
-- Telegram bot token từ [@BotFather](https://t.me/botfather)
-- Telegram user id được phép sử dụng bot
+Bạn cần chuẩn bị trước:
 
-## Cấu hình
+- Node.js đã cài sẵn
+- `npm`
+- `codex` CLI (OpenAI Codex CLI) đã cài và có thể gọi bằng lệnh `codex`
+- Một Telegram bot token từ [@BotFather](https://t.me/botfather)
+- Telegram user id của tài khoản được phép dùng bot
 
-Tạo file `.env` với nội dung tối thiểu:
+## Cài đặt từng bước
+
+### 1. Clone project
+
+```bash
+git clone https://github.com/SangHynh/flowork
+cd flowork
+```
+
+Nếu bạn đã có source sẵn thì chỉ cần đi vào thư mục dự án.
+
+### 2. Cài Node.js dependencies
+
+```bash
+npm install
+```
+
+### 3. Cài `codex` CLI
+
+Flowork không tự nhúng model hay API request riêng. Nó gọi trực tiếp `codex` trên máy của bạn, vì vậy bước này là bắt buộc.
+
+Cài đặt bằng `npm` (yêu cầu Node.js v22+):
+
+```bash
+npm install -g @openai/codex
+```
+
+Hoặc tham khảo hướng dẫn chính thức tại: [OpenAI Codex CLI](https://openai.com/index/openai-codex-cli/)
+
+Sau khi cài xong, kiểm tra lại:
+
+```bash
+codex --version
+```
+
+Nếu lệnh này không chạy được, Flowork sẽ dừng ngay lúc khởi động.
+
+### 4. Đăng nhập `codex`
+
+Trước khi dùng bot, hãy đăng nhập Codex trên máy tính:
+
+```bash
+codex login
+```
+
+Nếu máy của bạn phù hợp với device flow, có thể dùng:
+
+```bash
+codex login --device-auth
+```
+
+Kiểm tra trạng thái đăng nhập:
+
+```bash
+codex login status
+```
+
+Nếu chưa đăng nhập, bot vẫn có thể khởi động nhưng các yêu cầu AI sẽ thất bại khi gọi `codex`.
+
+### 5. Tạo Telegram bot
+
+Mở Telegram và chat với [@BotFather](https://t.me/botfather):
+
+1. Gửi `/newbot`
+2. Đặt tên bot
+3. Đặt username cho bot
+4. Lưu lại token mà BotFather trả về
+
+Token này sẽ được gán vào `TELEGRAM_BOT_TOKEN` trong file `.env`.
+
+### 6. Lấy Telegram user id của bạn
+
+Bạn cần user id để giới hạn người được phép dùng bot.
+
+Có thể lấy bằng một trong các cách sau:
+
+1. Nhắn cho bot như `@myidbot` hoặc `@userinfobot`
+2. Lấy giá trị `user id` mà bot trả về
+
+Lưu ý:
+
+- Dùng `user id`, không dùng username
+- Có thể khai báo nhiều user bằng dấu phẩy
+- Ví dụ: `ALLOWED_USER_ID=123456789,987654321`
+
+### 7. Tạo file `.env`
+
+Copy từ file mẫu:
+
+```bash
+copy .env.sample .env
+```
+
+Nếu dùng PowerShell và lệnh `copy` không quen tay, bạn có thể tạo file thủ công. Nội dung tối thiểu:
 
 ```env
 TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_HERE
@@ -23,42 +126,59 @@ ALLOWED_USER_ID=123456789
 PROJECTS_DIR=e:\
 ```
 
-Ghi chú:
+Giải thích:
 
-- `ALLOWED_USER_ID` là Telegram user id được phép dùng bot.
-- Có thể khai báo nhiều user id bằng dấu phẩy, ví dụ `ALLOWED_USER_ID=123456789,987654321`.
-- Nếu không cấu hình `PROJECTS_DIR`, bot sẽ mặc định dùng `e:\\fullstack`.
-- Bot sẽ dừng ngay khi khởi động nếu thiếu `TELEGRAM_BOT_TOKEN`, thiếu `ALLOWED_USER_ID`, hoặc không tìm thấy `codex`.
+- `TELEGRAM_BOT_TOKEN`: token của bot từ BotFather
+- `ALLOWED_USER_ID`: user id Telegram được phép dùng bot
+- `PROJECTS_DIR`: thư mục gốc để bot hiện workspace explorer
 
-### Cách lấy `ALLOWED_USER_ID`
+Nếu bỏ trống `PROJECTS_DIR`, dự án sẽ mặc định dùng `e:\fullstack`.
 
-Bạn có thể lấy Telegram user id của mình bằng một trong các cách sau:
-
-1. Nhắn cho bot như `@myidbot`, `@userinfobot`, hoặc bot tương tự và lấy số `user id` mà bot trả về.
-2. Dùng một bot helper bất kỳ có chức năng trả `Your ID` hoặc `user_id`.
-
-Lưu ý:
-
-- Cần lấy `user id` của chính tài khoản Telegram của bạn.
-- Không dùng username, số điện thoại, hoặc chat id nhóm để điền vào `ALLOWED_USER_ID`.
-
-## Chạy bot
+### 8. Build project
 
 ```bash
-npm install
 npm run build
+```
+
+### 9. Chạy bot
+
+```bash
 npm start
 ```
 
-## Cách hoạt động
+Hoặc khi đang dev:
 
-1. Dùng `/workspaces` để duyệt và chọn thư mục làm việc.
-2. Mỗi lần chọn workspace, bot sẽ mở một phiên mới trong workspace đó.
-3. Các tin nhắn gửi tiếp theo sẽ được tiếp tục trong workspace hiện tại bằng `codex exec resume --last`.
-4. Dùng `/stop` để xóa state hiện tại. Muốn làm tiếp thì chọn workspace lại.
-5. User không nằm trong `ALLOWED_USER_ID` sẽ bị chặn toàn bộ command, callback và message.
+```bash
+npm run dev
+```
 
-## Lệnh hỗ trợ
+Khi khởi động thành công, bot sẽ:
+
+- Nạp biến môi trường từ `.env`
+- Kiểm tra `TELEGRAM_BOT_TOKEN`
+- Kiểm tra `ALLOWED_USER_ID`
+- Kiểm tra `codex` CLI có tồn tại hay không
+
+Nếu thiếu một trong các điều kiện trên, tiến trình sẽ thoát ngay.
+
+## Chạy lần đầu trên Telegram
+
+Sau khi bot đang chạy:
+
+1. Mở chat với bot của bạn
+2. Gửi `/start`
+3. Gửi `/workspaces`
+4. Chọn đúng thư mục dự án
+5. Gửi một yêu cầu bất kỳ, ví dụ: `đọc README và tóm tắt cho tôi`
+
+Từ lúc này:
+
+- `/status` để xem workspace đang active
+- `/list` để xem file trong workspace hiện tại
+- `/stop` để xóa phiên hiện tại
+- `/help` để xem hướng dẫn nhanh
+
+## Các lệnh hỗ trợ
 
 - `/workspaces`: mở trình duyệt workspace
 - `/list`: xem file trong workspace hiện tại
@@ -66,34 +186,83 @@ npm start
 - `/stop`: xóa state hiện tại
 - `/help`: hiện hướng dẫn nhanh
 - `/new`: hướng dẫn tạo dự án mới từ explorer
-- `/login`: đăng nhập tài khoản Codex từ xa _(xem lưu ý bên dưới)_
+- `/login`: đăng nhập tài khoản Codex từ xa
 - `/logout`: đăng xuất tài khoản Codex
 - `/auth_status`: kiểm tra trạng thái đăng nhập Codex hiện tại
 
-## Các tính năng thông minh mới (v1.2.x)
+## Đăng nhập từ xa bằng Telegram
 
-### 📄 Tự động phát hiện và xem file (Auto View File)
+Flowork hỗ trợ đăng nhập Codex từ xa qua lệnh `/login`, nhưng nên xem đây là phương án dự phòng.
 
-Khi AI nhắc tới một file trong workspace (ví dụ: "mình đã tạo `index.html`"), bot sẽ tự động kiểm tra sự tồn tại của file đó và hiện nút bấm **"📄 Xem index.html"** ngay dưới tin nhắn. Bạn có thể Click để xem nội dung file ngay lập tức.
+Khuyến nghị:
 
-### 📝 Định dạng thông minh
+- Ưu tiên đăng nhập trực tiếp trên máy bằng `codex login`
+- Chỉ dùng `/login` khi bạn đang ở xa máy
 
-Bot tự động nhận diện và hiển thị Markdown từ AI (bôi đậm, code block, link). Nếu nội dung quá dài, bot sẽ tự động chia nhỏ thành nhiều tin nhắn để đảm bảo bạn nhận được đầy đủ thông tin mà không bị giới hạn bởi Telegram.
+Trước khi dùng `/login`, bạn phải bật tính năng device authorization trong tài khoản ChatGPT:
 
-### 🛡️ Xử lý lỗi thân thiện
+`chatgpt.com` -> avatar -> `Settings` -> `Security` -> Bật `Device code authorization for Codex`
 
-Thay vì những dòng lỗi CLI khó hiểu, bot sẽ dịch các lỗi phổ biến (401 Unauthorized, 429 Rate Limit, 500 Server Error) sang tiếng Việt và hướng dẫn bạn cách xử lý (ví dụ: nhắc bạn dùng `/login`).
+## Sự cố thường gặp
 
-## Đăng nhập từ xa (Login/Logout)
+### `TELEGRAM_BOT_TOKEN is missing in .env`
 
-> ⚠️ **Không khuyến khích sử dụng thường xuyên.** Nếu có thể, hãy đăng nhập trực tiếp trên máy bằng `codex login` hoặc `codex login --device-auth` trong terminal.
+Bạn chưa tạo `.env` hoặc chưa điền token.
 
-Bot hỗ trợ đăng nhập và đăng xuất tài khoản Codex từ xa qua Telegram bằng **OAuth Device Code Flow**.
+### `ALLOWED_USER_ID is missing in .env`
 
-### Yêu cầu bắt buộc trước khi dùng `/login`
+Bạn chưa điền user id Telegram được phép sử dụng bot.
 
-Bạn **phải bật tính năng này thủ công** trong cài đặt ChatGPT:
-[chatgpt.com](https://chatgpt.com) → avatar → **Settings** → **Security** → Bật **"Device code authorization for Codex"**.
+### `Codex CLI is not available`
+
+Máy của bạn chưa cài `codex`, hoặc `codex` chưa có trong `PATH`.
+
+Thử lại:
+
+```bash
+codex --version
+```
+
+### Bot trả lời là chưa đăng nhập hoặc hết phiên
+
+Hãy đăng nhập lại:
+
+```bash
+codex login
+```
+
+Hoặc dùng lệnh Telegram:
+
+```text
+/login
+```
+
+### Bot không phản hồi với tài khoản của bạn
+
+Kiểm tra lại:
+
+- Tài khoản Telegram của bạn có đúng `ALLOWED_USER_ID` hay không
+- Bạn đã restart bot sau khi sửa `.env` hay chưa
+
+## Bảo mật và quyền riêng tư
+
+- Bot Telegram không phải hệ thống vô hình. Bất kỳ ai biết username bot đều có thể tìm thấy bot và nhắn tin.
+- Chỉ những user nằm trong `ALLOWED_USER_ID` mới được thực hiện command và gửi message hợp lệ.
+- Telegram là bên thứ ba, vì vậy không nên xem đây là kênh an toàn để xử lý dữ liệu quá nhạy cảm.
+- Không chia sẻ device code, OTP, hay thông tin đăng nhập cho người khác.
+
+## Scripts
+
+`package.json` hiện có các lệnh sau:
+
+```bash
+npm run build
+npm start
+npm run dev
+npm run lint
+npm run lint:fix
+npm run format
+```
 
 ## Bảo mật và quyền riêng tư
 
@@ -108,13 +277,11 @@ Bạn **phải bật tính năng này thủ công** trong cài đặt ChatGPT:
 
 _Người dùng tự cân nhắc mức độ rủi ro phù hợp với nhu cầu sử dụng của mình._
 
-## Lịch sử phiên bản (Release History)
+## Release History
 
-| Phiên bản |    Ngày    | Nội dung cập nhật                                                                                                       |
-| :-------: | :--------: | :---------------------------------------------------------------------------------------------------------------------- |
-| `v1.2.1`  | 24/03/2026 | **UX Excellence**: Thêm Response Formatter (Auto View File buttons, Markdown, Splitting), dịch lỗi CLI sang tiếng Việt. |
-| `v1.2.0`  | 24/03/2026 | **Remote Auth**: Thêm lệnh `/login`, `/logout`, `/auth_status` qua Device Auth (OAuth).                                 |
-| `v1.1.0`  | 23/03/2026 | **Localization & Explorer**: Tiếng Việt hóa bộ lệnh, thêm `/workspaces`, `/status`, `/stop`, `/list`, `/help`.          |
-| `v1.0.1`  | 23/03/2026 | **Initial Release**: Core logic điều khiển Codex CLI qua Telegram, Workspace Explorer cơ bản.                           |
-
----
+| Version  |    Date    | Nội dung cập nhật                                                                                     |
+| :------: | :--------: | :---------------------------------------------------------------------------------------------------- |
+| `v1.2.1` | 24/03/2026 | UX improvements: auto view file, markdown formatting, chia nhỏ message, dịch lỗi CLI sang tiếng Việt. |
+| `v1.2.0` | 24/03/2026 | Remote auth: thêm `/login`, `/logout`, `/auth_status` qua device auth.                                |
+| `v1.1.0` | 23/03/2026 | Localization và workspace explorer: thêm `/workspaces`, `/status`, `/stop`, `/list`, `/help`.         |
+| `v1.0.1` | 23/03/2026 | Initial release: điều khiển Codex CLI qua Telegram và workspace explorer cơ bản.                      |
